@@ -9,7 +9,7 @@ Disciplinas integradas: Modelagem de Dados para IA, Aprendizagem de Máquina e C
 resolução**, para que o gestor consiga priorizar a fila e realocar agentes antes do prazo estourar.
 
 ## Integrantes
-- José Leonardo
+- João
 - Integrante 2
 - Integrante 3
 - Integrante 4

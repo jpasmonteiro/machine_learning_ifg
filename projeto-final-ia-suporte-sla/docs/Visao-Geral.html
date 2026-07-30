@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Visão Geral - Dataset e Ferramentas</title>
+<style>
+ *{box-sizing:border-box;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+ body{margin:0;background:#eef2f8;color:#243b53;line-height:1.5}
+ .wrap{max-width:900px;margin:0 auto;padding:24px}
+ header{background:#1e2761;color:#fff;border-radius:12px;padding:22px 26px;margin-bottom:18px}
+ header h1{margin:0 0 6px;font-size:22px} header p{margin:0;opacity:.9;font-size:14px}
+ h2{color:#1e2761;border-bottom:2px solid #d6e0ee;padding-bottom:6px;margin-top:26px;font-size:18px}
+ h3{color:#02675a;margin:16px 0 6px;font-size:15px}
+ .card{background:#fff;border:1px solid #dce5f0;border-radius:10px;padding:14px 16px;margin:10px 0}
+ table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0}
+ th,td{padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:left;vertical-align:top}
+ th{background:#1e2761;color:#fff;font-weight:600}
+ tr:nth-child(even) td{background:#f7f9fc}
+ code{background:#eef2f8;padding:1px 5px;border-radius:4px;font-size:12.5px;color:#0f3d6b}
+ .pill{display:inline-block;background:#e6f7f4;color:#02675a;border-radius:20px;padding:2px 10px;font-size:12px;margin:2px 4px 2px 0}
+ .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+ .kpi{background:#fff;border:1px solid #dce5f0;border-radius:9px;padding:10px;text-align:center}
+ .kpi .v{font-size:20px;font-weight:700;color:#1e2761}.kpi .l{font-size:11.5px;color:#5b6770}
+ ul{margin:6px 0 6px 18px}
+</style></head><body><div class="wrap">
+
+<header>
+ <h1>Visão Geral &middot; Dataset e Ferramentas de Integração</h1>
+ <p>Pipeline de Dados em Nuvem para ML &middot; Previsão de violação de SLA em chamados de suporte</p>
+</header>
+
+<h2>1. O dataset utilizado</h2>
+<div class="card">
+<p><b>Domínio:</b> suporte técnico (service desk de um SaaS). <b>Volume:</b> 8.000 chamados de ~12 meses.
+Dados <b>sintéticos e reprodutíveis</b> (semente fixa = 42), com esquema espelhando o
+<i>Customer Support Ticket Dataset</i>. Para usar dados reais, basta trocar os arquivos em
+<code>data/raw</code> mantendo os mesmos campos.</p>
+
+<div class="kpis">
+ <div class="kpi"><div class="v">8.000</div><div class="l">chamados</div></div>
+ <div class="kpi"><div class="v">22,8%</div><div class="l">violam o SLA (alvo)</div></div>
+ <div class="kpi"><div class="v">14,2 h</div><div class="l">tempo médio de resolução</div></div>
+ <div class="kpi"><div class="v">3,97 / 5</div><div class="l">CSAT médio</div></div>
+</div>
+
+<h3>3 fontes (estruturada + não estruturada + semiestruturada)</h3>
+<table>
+ <tr><th>Fonte</th><th>Tipo</th><th>Formato</th><th>Registros</th><th>Conteúdo principal</th></tr>
+ <tr><td><code>tickets.csv</code></td><td>Estruturado</td><td>CSV</td><td>8.000</td><td>categoria, prioridade, canal, produto, tier, região, fila na abertura, 1ª resposta, tempo de resolução, reabertura, CSAT</td></tr>
+ <tr><td><code>ticket_messages.jsonl</code></td><td>Não estruturado</td><td>JSONL</td><td>8.000</td><td>texto livre do cliente (descrição do problema) + nota do agente</td></tr>
+ <tr><td><code>ticket_events.json</code></td><td>Semiestruturado</td><td>JSON</td><td>8.000</td><td>trilha de eventos: aberto → em atendimento → resolvido/reaberto</td></tr>
+</table>
+
+<h3>Variável-alvo e atributos</h3>
+<p><b>Alvo:</b> <code>sla_breach</code> (0/1) — o chamado violou o SLA de resolução?
+SLA por prioridade: Crítica 4h &middot; Alta 8h &middot; Média 24h &middot; Baixa 48h.</p>
+<p><b>Atributos extraídos:</b>
+<span class="pill">Estruturado: limpeza, padronização, partes de data</span>
+<span class="pill">Texto: comprimento, nº de palavras, léxico de urgência, flags (reembolso/cancelamento/erro)</span>
+<span class="pill">Logs: nº de eventos, mudanças de status, reabertura</span></p>
+<p><b>Alguns achados:</b> prioridade <b>Crítica viola 60%</b> dos SLAs; por categoria,
+<b>Solicitação de Recurso (68,5%)</b> e <b>Bug/Defeito (46,8%)</b> são as mais críticas.</p>
+</div>
+
+<h2>2. Qual ferramenta contempla cada coisa</h2>
+<table>
+ <tr><th>#</th><th>Etapa do pipeline</th><th>Ferramenta</th><th>O que faz</th></tr>
+ <tr><td>1</td><td>Ingestão</td><td>Python (pandas) + AWS Lambda</td><td>Gera/coleta os dados brutos das 3 fontes</td></tr>
+ <tr><td>2</td><td>Armazenamento em nuvem</td><td>Amazon S3 (boto3)</td><td>Guarda os dados em camadas raw / processed / curated</td></tr>
+ <tr><td>3</td><td>Processamento e atributos</td><td>Python (pandas)</td><td>Limpa os dados e extrai os atributos (texto + logs)</td></tr>
+ <tr><td>4</td><td>Base analítica (warehouse)</td><td>Snowflake <span style="color:#5b6770">(DuckDB como espelho local)</span></td><td>Onde as tabelas analíticas ficam armazenadas</td></tr>
+ <tr><td>5</td><td>Transformação / modelagem</td><td>dbt</td><td>staging → dimensões → fatos → marts + <b>10 testes</b> de qualidade</td></tr>
+ <tr><td>6</td><td>Orquestração</td><td>Airflow <span style="color:#5b6770">(Amazon MWAA em produção)</span></td><td>Encadeia e agenda todas as etapas (DAG)</td></tr>
+ <tr><td>7</td><td>Machine Learning</td><td>Python: KNN na mão + scikit-learn <span style="color:#5b6770">(SageMaker em produção)</span></td><td>KNN na mão + com biblioteca; SVM e MLP para comparação</td></tr>
+ <tr><td>8</td><td>Infraestrutura como código</td><td>AWS CloudFormation</td><td>Provisiona S3, IAM, Lambda e CloudWatch (template YAML)</td></tr>
+ <tr><td>9</td><td>Monitoramento</td><td>AWS CloudWatch</td><td>Logs e métricas da execução</td></tr>
+ <tr><td>10</td><td>Visualização / decisão</td><td>Metabase</td><td>Dashboard de apoio à decisão (fila priorizada por risco)</td></tr>
+</table>
+
+<h2>3. Divisão por disciplina (para o grupo)</h2>
+<table>
+ <tr><th>Disciplina</th><th>O que cobre no projeto</th></tr>
+ <tr><td><b>Modelagem de Dados para IA</b></td><td>Fontes de dados, Snowflake, dbt (staging/dims/fatos + testes) e a DAG do Airflow</td></tr>
+ <tr><td><b>Aprendizagem de Máquina</b></td><td>Preparação, baseline, KNN hard-code (NumPy), KNN com scikit-learn, SVM, MLP e as métricas</td></tr>
+ <tr><td><b>Cloud Computing</b></td><td>AWS: S3 (upload boto3), CloudFormation, Lambda, CloudWatch, diagrama 100% AWS e custos</td></tr>
+</table>
+
+<h2>4. Resultados (resumo)</h2>
+<ul>
+ <li>KNN <b>na mão</b> e <b>scikit-learn</b>: idênticos (concordância de 100% nas predições).</li>
+ <li>SVM (modelo de produção): <b>F1 = 0,77</b> &middot; <b>ROC-AUC = 0,95</b>. MLP: F1 = 0,76. Algoritmos: KNN, SVM, MLP.</li>
+ <li>dbt: 12 modelos e 10 testes de qualidade — todos passando (PASS=22).</li>
+</ul>
+
+</div></body></html>

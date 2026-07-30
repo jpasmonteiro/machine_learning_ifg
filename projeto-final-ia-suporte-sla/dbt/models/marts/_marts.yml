@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: fct_tickets
+    description: >
+      Fato central de chamados de suporte. Um registro por chamado, integrando a
+      fonte estruturada, os atributos textuais e as agregacoes dos logs.
+    columns:
+      - name: ticket_id
+        description: "Chave do chamado."
+        tests: [not_null, unique]
+      - name: priority
+        description: "Prioridade do chamado."
+        tests:
+          - accepted_values:
+              values: ['Baixa', 'Média', 'Alta', 'Crítica']
+      - name: sla_breach
+        description: "Alvo: 1 se o chamado violou o SLA de resolucao."
+        tests:
+          - accepted_values:
+              values: [0, 1]
+  - name: fct_predictions
+    description: "Predicoes do modelo no conjunto de teste, ligadas ao fato de chamados."
+    columns:
+      - name: ticket_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('fct_tickets')
+              field: ticket_id
+  - name: mart_ticket_decision
+    description: "Visao de apoio a decisao (fila priorizada por risco de SLA)."
+    columns:
+      - name: ticket_id
+        tests: [not_null]

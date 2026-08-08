@@ -9,10 +9,9 @@ Disciplinas integradas: Modelagem de Dados para IA, Aprendizagem de Máquina e C
 resolução**, para que o gestor consiga priorizar a fila e realocar agentes antes do prazo estourar.
 
 ## Integrantes
-- João
-- Integrante 2
-- Integrante 3
-- Integrante 4
+- João Paulo Monteiro
+- Pedro Felipe De Moraes Carrijo
+- Rogério dos Anjos
 
 > Substitua os nomes acima pelos integrantes reais do grupo.
 

@@ -1,0 +1,47 @@
+# Ambiente analitico local: Postgres (warehouse) + Metabase (visualizacao).
+#
+# O Postgres faz o papel do Snowflake no ambiente local: e' um warehouse
+# cliente-servidor de verdade, e os MESMOS modelos dbt rodam nele sem alterar
+# uma linha de SQL (basta trocar o target). Isso demonstra a portabilidade da
+# modelagem: DuckDB (arquivo) -> Postgres (servidor) -> Snowflake (nuvem).
+#
+# O Metabase se conecta ao Postgres pelo driver NATIVO, sem plugin da comunidade.
+#
+# Subir:   docker compose -f infra/docker-compose.yml up -d
+# Derrubar: docker compose -f infra/docker-compose.yml down        (mantem os dados)
+#           docker compose -f infra/docker-compose.yml down -v     (apaga os dados)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: suporte-postgres
+    environment:
+      POSTGRES_DB: suporte_dw
+      POSTGRES_USER: suporte
+      POSTGRES_PASSWORD: suporte
+    ports:
+      - "5433:5432"          # 5433 no host para nao colidir com um Postgres local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suporte -d suporte_dw"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: suporte-metabase
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  pgdata:

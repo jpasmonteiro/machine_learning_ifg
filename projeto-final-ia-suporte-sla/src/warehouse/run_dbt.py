@@ -17,7 +17,9 @@ DBT_DIR = str(pathlib.Path(__file__).resolve().parents[2] / "dbt")
 
 def run(command=None):
     os.environ["DUCKDB_PATH"] = str(DUCKDB_PATH.resolve())
-    target = "snowflake" if os.environ.get("WAREHOUSE_TARGET", "").lower() == "snowflake" else "dev"
+    # WAREHOUSE_TARGET escolhe o warehouse; 'dev' e' o DuckDB local (padrao).
+    target = {"snowflake": "snowflake", "postgres": "postgres"}.get(
+        os.environ.get("WAREHOUSE_TARGET", "").lower(), "dev")
     from dbt.cli.main import dbtRunner
     runner = dbtRunner()
     args = (command or ["build"]) + ["--project-dir", DBT_DIR,

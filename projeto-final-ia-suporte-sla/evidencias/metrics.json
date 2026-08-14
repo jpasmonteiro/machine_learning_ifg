@@ -1,6 +1,6 @@
 {
   "tarefa": "classificacao binaria (sla_breach)",
-  "algoritmos": "KNN (hard-code + sklearn), SVM, MLP",
+  "algoritmos": "KNN (hard-code + sklearn), MLP",
   "n_treino": 6000,
   "n_teste": 2000,
   "n_atributos": 49,
@@ -34,13 +34,6 @@
       "f1": 0.5424,
       "roc_auc": 0.8821
     },
-    "svm": {
-      "accuracy": 0.903,
-      "precision": 0.8541,
-      "recall": 0.693,
-      "f1": 0.7651,
-      "roc_auc": 0.9529
-    },
     "mlp": {
       "accuracy": 0.8875,
       "precision": 0.7473,
@@ -55,5 +48,5 @@
     "diff_roc_auc": 0.0,
     "k": 15
   },
-  "modelo_producao": "svm"
+  "modelo_producao": "mlp"
 }

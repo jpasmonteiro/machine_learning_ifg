@@ -1,0 +1,72 @@
+# =============================================================================
+# Regra geral: se o `python run_pipeline.py` recria em 8 segundos, nao versiona.
+# O que fica versionado e' o codigo, a configuracao e os ENTREGAVEIS
+# (relatorio, apresentacao, dicionario de dados e a pasta evidencias/).
+# =============================================================================
+
+# --- Ambientes virtuais (cada maquina cria o seu) ----------------------------
+.venv/
+.venv-airflow/
+venv/
+env/
+ENV/
+
+# --- Cache e artefatos do Python ---------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Dados gerados pelo pipeline ---------------------------------------------
+# raw/ processed/ curated/ sao reconstruidos por `python run_pipeline.py`.
+# Nao versionar evita repositorio inchado (o warehouse sozinho passa de 4 MB).
+data/
+*.duckdb
+*.duckdb.wal
+
+# --- dbt ---------------------------------------------------------------------
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml
+
+# --- Airflow (AIRFLOW_HOME local, banco de metadados e logs) -----------------
+.airflow/
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+webserver_config.py
+standalone_admin_password.txt
+logs/
+
+# --- Video-aula gerado (pesado; recriado por docs/gerar_video.py) ------------
+docs/video/
+
+# --- Segredos e configuracao local -------------------------------------------
+# Nunca versionar credenciais (AWS, Snowflake, Metabase).
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+
+# --- Sistema operacional e editores ------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# =============================================================================
+# NAO ignorar (entregaveis exigidos pelo item 7.1 do enunciado):
+#   evidencias/          prints, logs e saidas de execucao
+#   docs/*.docx *.pptx   relatorio e apresentacao
+#   dashboard/mockup.html
+#   infra/*.yaml *.png   CloudFormation e diagrama da arquitetura
+# =============================================================================

@@ -152,16 +152,18 @@ txt(s, 7.3, 4.64, 5.2, 1.7, [
 ], size=13.5, color=WHITE, space=8)
 
 # ---- 6. RESULTADOS ML ----
-s = slide(); title(s, "Resultados do modelo de ML", "KNN (hard-code + biblioteca), SVM e MLP")
+s = slide(); title(s, "Resultados do modelo de ML", "Baselines, KNN (hard-code + biblioteca) e MLP")
 mm = M["metricas"]
-def r(k,n): d=mm[k]; return [n,f"{d['accuracy']:.3f}",f"{d['precision']:.3f}",f"{d['recall']:.3f}",f"{d['f1']:.3f}",f"{d['roc_auc']:.3f}"]
+def r(k,n):
+    d=mm[k]
+    return [n] + [f"{d[c]:.3f}".replace(".", ",")
+                  for c in ('accuracy','precision','recall','f1','roc_auc')]
 data=[["Modelo","Acc","Prec","Recall","F1","AUC"],
       r("baseline_regra_prioridade","Baseline (regra)"),
       r("knn_hardcode","KNN (na mão)"),
       r("knn_sklearn","KNN (sklearn)"),
-      r("svm","SVM *"),
-      r("mlp","MLP")]
-tb=s.shapes.add_table(6,6, Inches(0.6),Inches(1.95), Inches(6.6),Inches(2.75)).table
+      r("mlp","MLP *")]
+tb=s.shapes.add_table(5,6, Inches(0.6),Inches(1.95), Inches(6.6),Inches(2.4)).table
 for ci,wd in enumerate([2.1,0.9,0.9,0.9,0.9,0.9]): tb.columns[ci].width=Inches(wd)
 for ri,row in enumerate(data):
     for ci,val in enumerate(row):
@@ -176,7 +178,7 @@ txt(s, 7.45, 4.6, 5.6, 0.4, "Matriz de confusão e curva ROC (conjunto de teste)
 box(s, 0.6, 5.35, 12.15, 1.25, fill=RGBColor(0xE6,0xF7,0xF4))
 txt(s, 0.85, 5.5, 11.7, 1.0, [
     "• KNN na mão (NumPy) e scikit-learn ficaram IDÊNTICOS: concordância de 100% nas predições.",
-    "• SVM teve o melhor F1 (0,77) e AUC (0,95), sendo escolhido como modelo de produção.",
+    f"• O MLP teve o melhor F1 ({mm['mlp']['f1']:.3f}) e recall ({mm['mlp']['recall']:.3f}), sendo escolhido como modelo de produção.".replace(".", ",", 2),
 ], size=14, space=8, color=INK, anchor=MSO_ANCHOR.MIDDLE)
 
 # ---- 7. DASHBOARD ----

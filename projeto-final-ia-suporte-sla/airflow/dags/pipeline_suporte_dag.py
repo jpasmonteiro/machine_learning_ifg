@@ -1,63 +1,55 @@
 """
 DAG do Airflow para o pipeline de suporte tecnico.
 
-Orquestra as mesmas etapas do run_pipeline.py, mas com dependencias explicitas,
-re-execucao por task e agendamento diario. Para subir o Airflow localmente,
-use o docker-compose em airflow/ (ver README) e aponte o AIRFLOW_HOME para
-este projeto, ou copie esta DAG para a pasta dags/ do seu Airflow.
+Orquestra as mesmas 7 etapas do run_pipeline.py, com dependencias explicitas,
+re-execucao por task e agendamento diario.
+
+POR QUE BashOperator E NAO PythonOperator
+-----------------------------------------
+O Airflow e o projeto tem dependencias INCOMPATIVEIS entre si:
+
+    pacote       Airflow 2.10   projeto (dbt/pandas)
+    sqlalchemy   1.4.x          2.0.x
+    protobuf     4.25.x         6.x  (exigido pelo dbt-core)
+
+Nao existe ordem de PYTHONPATH que satisfaca os dois: se o projeto vence, o
+Airflow nao sobe; se o Airflow vence, o dbt quebra. A solucao e' isolamento por
+processo: o Airflow apenas ORQUESTRA, e cada task executa no interpretador do
+proprio projeto (.venv), num subprocesso separado.
+
+Isso tambem preserva o principio de nao duplicar logica: cada task roda
+exatamente o mesmo comando documentado no README (`python -m src.<modulo>`),
+que e' o mesmo codigo chamado pelo run_pipeline.py.
+
+CONFIGURACAO
+    PROJECT_ROOT     raiz do projeto (default: dois niveis acima deste arquivo)
+    PROJECT_PYTHON   interpretador do projeto (default: $PROJECT_ROOT/.venv/bin/python)
 """
 from __future__ import annotations
 
 import os
-import sys
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 
-# garante que o pacote do projeto fique visivel para os imports da DAG
 PROJECT_ROOT = os.environ.get(
     "PROJECT_ROOT",
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")),
 )
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+PROJECT_PYTHON = os.environ.get(
+    "PROJECT_PYTHON", os.path.join(PROJECT_ROOT, ".venv", "bin", "python")
+)
 
-
-def _ingestao():
-    from src.ingestion import generate_data
-    generate_data.generate()
-
-
-def _processamento():
-    from src.processing import process_features
-    process_features.run()
-
-
-def _ml():
-    from src.ml import train_evaluate
-    train_evaluate.run()
-
-
-def _carga():
-    from src.warehouse import load_warehouse
-    load_warehouse.run()
-
-
-def _dbt_build():
-    from src.warehouse import run_dbt
-    run_dbt.run()
-
-
-def _export():
-    from src.warehouse import export_dashboard
-    export_dashboard.run()
-
-
-def _upload_s3():
-    from src.cloud import s3_sync
-    s3_sync.run()
-
+ETAPAS = [
+    ("ingestao",                "src.ingestion.generate_data"),
+    ("processamento_atributos", "src.processing.process_features"),
+    ("treino_avaliacao_ml",     "src.ml.train_evaluate"),
+    ("carga_warehouse",         "src.warehouse.load_warehouse"),
+    ("dbt_build",               "src.warehouse.run_dbt"),
+    ("export_dashboard",        "src.warehouse.export_dashboard"),
+    ("upload_s3",               "src.cloud.s3_sync"),
+]
 
 default_args = {
     "owner": "grupo_suporte_ia",
@@ -75,13 +67,14 @@ with DAG(
     tags=["ifg", "pos-ia", "elt", "ml", "suporte"],
 ) as dag:
 
-    t_ingestao = PythonOperator(task_id="ingestao", python_callable=_ingestao)
-    t_processamento = PythonOperator(task_id="processamento_atributos", python_callable=_processamento)
-    t_ml = PythonOperator(task_id="treino_avaliacao_ml", python_callable=_ml)
-    t_carga = PythonOperator(task_id="carga_warehouse", python_callable=_carga)
-    t_dbt = PythonOperator(task_id="dbt_build", python_callable=_dbt_build)
-    t_export = PythonOperator(task_id="export_dashboard", python_callable=_export)
-    t_s3 = PythonOperator(task_id="upload_s3", python_callable=_upload_s3)
-
-    # ingestao -> processamento -> ML -> carga -> dbt -> export
-    t_ingestao >> t_processamento >> t_ml >> t_carga >> t_dbt >> t_export >> t_s3
+    anterior = None
+    for task_id, modulo in ETAPAS:
+        # PYTHONPATH e' zerado de proposito: impede que os pacotes do Airflow
+        # vazem para o subprocesso e conflitem com os do projeto.
+        atual = BashOperator(
+            task_id=task_id,
+            bash_command=f"cd {PROJECT_ROOT} && PYTHONPATH= {PROJECT_PYTHON} -m {modulo}",
+        )
+        if anterior:
+            anterior >> atual
+        anterior = atual

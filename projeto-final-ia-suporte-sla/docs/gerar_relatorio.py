@@ -17,6 +17,11 @@ AZUL = RGBColor(0x1F, 0x4E, 0x79)
 doc = Document()
 st = doc.styles["Normal"]; st.font.name = "Calibri"; st.font.size = Pt(11)
 
+def _n(v, casas=3):
+    """Numero no padrao brasileiro (virgula decimal)."""
+    return f"{v:.{casas}f}".replace(".", ",")
+
+
 def h(txt, lvl=1):
     p = doc.add_heading(txt, level=lvl)
     for r in p.runs: r.font.color.rgb = AZUL
@@ -204,23 +209,26 @@ para("Consideramos também a execução no AWS Academy (Learner Lab), ambiente u
 h("7. Aprendizagem de Máquina: modelos e métricas", 1)
 para("A tarefa é de classificação binária. Seguindo o item 4.6, criamos baselines, implementamos o "
      "modelo na forma hard-code e depois com biblioteca, e comparamos os resultados.")
-para("Usamos os algoritmos vistos na disciplina: KNN, SVM e MLP. Implementamos o KNN do zero "
+para("Usamos os algoritmos vistos na disciplina: KNN e MLP. Implementamos o KNN do zero "
      "(apenas NumPy): ele guarda os exemplos e, para prever, calcula a distância euclidiana até todos os "
      "pontos de treino, seleciona os k vizinhos mais próximos (usamos k = 15) e decide pela votação da "
      "maioria. Em seguida rodamos o mesmo KNN com o scikit-learn, e as duas versões ficaram idênticas "
      "(concordância de 100% nas predições), o que nos dá confiança de que a implementação manual está "
-     "correta. Como comparação, treinamos ainda um SVM (kernel RBF) e um MLP (rede neural). O SVM teve o "
-     "melhor desempenho (F1 = 0,77; ROC-AUC = 0,95) e foi escolhido como modelo de produção.")
+     "correta. Como comparação, treinamos ainda um MLP — uma rede neural com duas camadas ocultas de 64 e "
+     "32 neurônios. O MLP teve o melhor desempenho (F1 = " + _n(M["metricas"]["mlp"]["f1"])
+     + "; recall = " + _n(M["metricas"]["mlp"]["recall"])
+     + "; ROC-AUC = " + _n(M["metricas"]["mlp"]["roc_auc"])
+     + ") e foi escolhido como modelo de produção.")
 mm = M["metricas"]
 def row(k, nome):
-    d = mm[k]; return [nome, d["accuracy"], d["precision"], d["recall"], d["f1"], d["roc_auc"]]
+    d = mm[k]
+    return [nome] + [_n(d[c]) for c in ("accuracy", "precision", "recall", "f1", "roc_auc")]
 table(["Modelo", "Acurácia", "Precisão", "Recall", "F1", "ROC-AUC"], [
     row("baseline_majoritaria", "Baseline (classe majoritária)"),
     row("baseline_regra_prioridade", "Baseline (regra por prioridade)"),
     row("knn_hardcode", "KNN (hard-code)"),
     row("knn_sklearn", "KNN (scikit-learn)"),
-    row("svm", "SVM (produção)"),
-    row("mlp", "MLP"),
+    row("mlp", "MLP (produção)"),
 ])
 para("As métricas foram escolhidas conforme a tarefa (classificação): acurácia, precisão, recall, F1 "
      "e ROC-AUC, além da matriz de confusão. Demos atenção especial ao recall, pois deixar de sinalizar "

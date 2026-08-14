@@ -1,0 +1,37 @@
+EVIDENCIA DE EXECUCAO - DAG DO AIRFLOW
+==================================================================
+DAG........: pipeline_suporte_tecnico (schedule @daily, 7 tasks)
+Airflow....: 2.10.5  |  operador: BashOperator (isolamento por processo)
+Executado..: 2026-08-14 10:16
+Comando....: airflow dags test pipeline_suporte_tecnico 2026-08-14
+Interface..: http://localhost:8080  (airflow standalone)
+
+RESULTADO POR TASK (ordem de dependencia)
+------------------------------------------------------------------
+  1. ingestao                 SUCCESS
+  2. processamento_atributos  SUCCESS
+  3. treino_avaliacao_ml      SUCCESS
+  4. carga_warehouse          SUCCESS
+  5. dbt_build                SUCCESS
+  6. export_dashboard         SUCCESS
+  7. upload_s3                SUCCESS
+
+ESTADO FINAL: SUCCESS  (7/7 tasks)
+
+SAIDAS DO PIPELINE
+------------------------------------------------------------------
+  [ingestion] 8000 tickets gerados em /Users/pedro/Documents/ifg/machine_learning_ifg/projeto-final-ia-suporte-sla/data/raw
+  [ingestion] taxa de violacao de SLA (alvo positivo): 22.8%
+  [processing] tickets_clean: (8000, 22), text: (8000, 10), logs: (8000, 4)
+  [processing] ml_features: (8000, 26) -> /Users/pedro/Documents/ifg/machine_learning_ifg/projeto-final-ia-suporte-sla/data/processed/ml_features.csv
+  [processing] taxa de sla_breach: 22.8%
+  [warehouse] raw.tickets_clean: 8000 linhas
+  [warehouse] raw.text_features: 8000 linhas
+  [warehouse] raw.log_features: 8000 linhas
+  [warehouse] raw.predictions: 2000 linhas
+  [warehouse] DuckDB pronto em /Users/pedro/Documents/ifg/machine_learning_ifg/projeto-final-ia-suporte-sla/data/curated/warehouse.duckdb
+  [2026-08-14 10:16:08,470] {subprocess.py:106} INFO - 13:16:08  Done. PASS=22 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=22
+  13:16:08  Done. PASS=22 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=22
+  [dashboard] dados exportados -> /Users/pedro/Documents/ifg/machine_learning_ifg/projeto-final-ia-suporte-sla/data/curated/dashboard/dashboard_data.json
+  [dashboard] KPIs: {'total_chamados': 8000.0, 'taxa_violacao_pct': 22.8, 'tempo_medio_resolucao_min': 853.1, 'tempo_medio_1a_resposta_min': 154.3, 'taxa_reabertura_pct': 10.2, 'csat_medio': 3.97}
+  [s3] S3_BUCKET nao definido -> upload pulado (modo local). Defina S3_BUCKET para enviar os dados ao S3.

@@ -46,7 +46,6 @@ dbt:
 	$(PYTHON) -m src.warehouse.run_dbt
 dashboard:
 	$(PYTHON) -m src.warehouse.export_dashboard
-	$(PYTHON) dashboard/gerar_mockup.py
 
 clean:
 	rm -rf data/processed/* data/curated/* dbt/target dbt/logs

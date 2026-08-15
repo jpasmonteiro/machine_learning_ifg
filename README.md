@@ -21,16 +21,18 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 
 - Escopo do projeto PDF: [relatorio/Projeto_Final.pdf](relatorio/Projeto_Final.pdf)
 - Relatório editável: [relatorio/Relatorio_Projeto_Final.docx](relatorio/Relatorio_Projeto_Final.docx)
-- Apresentação: [apresentacao/Apresentacao_Projeto_Final.pptx](apresentacao/Apresentacao_Projeto_Final.pptx)
+- Apresentação: [apresentacao/Apresentacao_Projeto_Final.pdf](apresentacao/Apresentacao_Projeto_Final.pdf)
 - Código executável e dados de entrada na raiz do repositório
-- Dashboard local: [dashboard/mockup.html](dashboard/mockup.html)
+- Dashboard no Metabase: provisionado por `make run`, em http://localhost:3000
+- Dashboard offline (plano B, sem Docker/internet): [dashboard/mockup.html](dashboard/mockup.html)
+- Detalhamento das últimas adições: [docs/ADICOES_ENTREGA.md](docs/ADICOES_ENTREGA.md)
 
 ## Estrutura principal
 
 ```text
 .
 ├── README.md                         # guia principal da entrega
-├── Makefile                          # comandos make env, make run e make destroy
+├── Makefile                          # make run, stack-up, bi, airflow-run, destroy
 ├── .env-aws.example                  # modelo de credenciais AWS
 ├── requirements.txt                  # dependências Python
 ├── run_pipeline.py                   # orquestrador principal
@@ -38,15 +40,22 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 │   ├── raw/                          # dados brutos já materializados
 │   ├── processed/                    # saídas processadas/features
 │   └── curated/                      # warehouse DuckDB e dados do dashboard
-├── src/                              # código-fonte Python
+├── src/
+│   ├── processing/                   # limpeza e extração de atributos
+│   ├── ml/                           # KNN hard-code, sklearn, SVM e MLP
+│   ├── warehouse/                    # carga, dbt e geração do painel offline
+│   ├── bi/                           # Postgres, Metabase e controle dos containers
+│   ├── orchestration/                # disparo da DAG e evidência
+│   └── cloud/                        # CloudFormation e S3
 ├── config/                           # configurações do projeto
-├── dbt/                              # modelos e testes dbt
-├── dashboard/                        # mockup HTML e consultas Metabase
-├── infra/                            # CloudFormation, custos e diagrama AWS
-├── evidencias/                       # métricas, matriz de confusão, ROC e dashboard
+├── dbt/                              # modelos e testes dbt (duckdb/postgres/snowflake)
+├── dashboard/                        # painel offline, vendor e consultas Metabase
+├── infra/                            # CloudFormation, docker-compose, custos e diagrama
+├── docs/                             # dicionário de dados e adições da entrega
+├── evidencias/                       # métricas, gráficos, DAG e prints do Metabase
 ├── relatorio/                        # relatório final
 ├── apresentacao/                     # slides da apresentação
-└── airflow/                          # DAG de referência do Airflow
+└── airflow/dags/                     # DAG do pipeline
 ```
 
 ## Visão geral da solução
@@ -54,7 +63,8 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 Fluxo principal:
 
 ```text
-dados raw -> processamento/features -> machine learning -> warehouse DuckDB -> dbt -> dashboard -> S3
+dados raw -> processamento/features -> machine learning -> warehouse DuckDB -> dbt
+   -> Postgres (BI) -> dashboard no Metabase -> S3
 ```
 
 O projeto inclui:
@@ -65,9 +75,25 @@ O projeto inclui:
 - Modelos de classificação: baseline, KNN hard-code, KNN scikit-learn, SVM e MLP.
 - Warehouse local em DuckDB como proxy de Snowflake.
 - Modelagem dbt com staging, dimensões, fatos, mart de ML, mart de decisão e testes.
+- Republicação da mesma modelagem dbt em Postgres, sem alterar SQL (portabilidade).
+- Dashboard no **Metabase** com 10 cards e filtros de prioridade, categoria e canal,
+  provisionado por script via API.
+- Orquestração pela **DAG do Airflow** (9 tasks), em container.
 - Provisionamento obrigatório de bucket Amazon S3 via CloudFormation.
 - Upload das camadas `raw`, `processed` e `curated` para o S3.
-- Dashboard em mockup HTML e consultas para Metabase.
+
+### Serviços locais
+
+`make run` sobe os containers automaticamente (`infra/docker-compose.yml`):
+
+| Serviço  | Endereço                | Credenciais                             |
+| -------- | ----------------------- | --------------------------------------- |
+| Metabase | http://localhost:3000   | `admin@suporte.local` / `Suporte@2026`  |
+| Airflow  | http://localhost:8081   | `admin` / `admin`                       |
+| Postgres | `localhost:5433`        | `suporte` / `suporte`                   |
+
+Sem Docker na máquina, as etapas de BI são puladas com aviso e o restante do
+pipeline roda normalmente (`SKIP_BI=1` força o pulo).
 
 ## Como executar
 
@@ -166,8 +192,10 @@ A execução faz:
 6. Treina e avalia os modelos.
 7. Carrega o warehouse DuckDB.
 8. Executa os modelos e testes dbt.
-9. Exporta dados para o dashboard.
-10. Envia as camadas `raw`, `processed` e `curated` para o S3.
+9. Exporta dados para o dashboard e regenera o painel HTML.
+10. Sobe os containers e republica a camada analítica no Postgres.
+11. Provisiona o dashboard no Metabase (10 cards + 3 filtros).
+12. Envia as camadas `raw`, `processed` e `curated` para o S3.
 
 Ao final, os recursos AWS permanecem ativos para validação no console. Para remover tudo depois da validação:
 
@@ -195,10 +223,15 @@ Após `make run`, os principais artefatos ficam em:
 data/processed/
 data/curated/warehouse.duckdb
 data/curated/dashboard/dashboard_data.json
+dashboard/mockup.html                        # painel offline, com filtros
 evidencias/metrics.json
 evidencias/matriz_confusao.png
 evidencias/curva_roc.png
-evidencias/dashboard_mockup.png
+evidencias/dashboard_mockup.png              # painel offline
+evidencias/metabase_dashboard.png            # painel no Metabase
+evidencias/metabase_dashboard_filtro.png     # o mesmo, com filtro aplicado
+evidencias/metabase_dashboard.log            # cards executados + prova do filtro
+evidencias/airflow_dag_run.log               # DAG 9/9 SUCCESS (após make airflow-run)
 ```
 
 No S3, os arquivos são enviados para um bucket com nome parecido com:
@@ -227,29 +260,39 @@ Ele responde perguntas como:
 - quais chamados têm maior risco previsto;
 - como o modelo está performando.
 
-### Abrir o dashboard rapidamente
+### Dashboard no Metabase (painel oficial)
 
-Depois de rodar `make run`, abra este arquivo no navegador:
-
-[dashboard/mockup.html](dashboard/mockup.html)
-
-Esse mockup usa os dados exportados em:
+Depois de `make run`, acesse:
 
 ```text
-data/curated/dashboard/dashboard_data.json
+http://localhost:3000        (admin@suporte.local / Suporte@2026)
 ```
 
-### Dashboard em Metabase
+O painel "Suporte - Apoio a Decisao" é provisionado automaticamente por
+`src/bi/metabase_setup.py`: 10 cards e três filtros (**prioridade, categoria e
+canal**) ligados às colunas reais das tabelas. Ele lê o Postgres, onde o pipeline
+republica os mesmos modelos dbt do DuckDB, sem alterar SQL.
 
-As consultas SQL dos cards estão em:
+Para rodar só a parte de BI: `make stack-up && make bi`.
 
-[dashboard/metabase_queries.sql](dashboard/metabase_queries.sql)
+Guia detalhado em [dashboard/README_metabase.md](dashboard/README_metabase.md);
+as consultas dos cards estão em [dashboard/metabase_queries.sql](dashboard/metabase_queries.sql).
 
-O guia específico do Metabase está em:
+### Dashboard offline (plano B)
 
-[dashboard/README_metabase.md](dashboard/README_metabase.md)
+[dashboard/mockup.html](dashboard/mockup.html) abre com duplo clique, **sem Docker
+e sem internet**, com os mesmos três filtros funcionando. É gerado a cada execução
+a partir de `data/curated/dashboard/dashboard_data.json`, então nunca fica
+dessincronizado dos dados.
 
-Em produção, o Metabase poderia se conectar ao warehouse analítico. Na entrega local, o mockup HTML é a forma mais simples de visualizar o resultado sem instalar ferramenta adicional.
+### Orquestração no Airflow
+
+```text
+http://localhost:8081        (admin / admin)
+```
+
+A DAG `pipeline_suporte_tecnico` executa as mesmas 9 etapas do `run_pipeline.py`.
+Para disparar e gerar a evidência: `make airflow-run`.
 
 ## Resultados principais
 

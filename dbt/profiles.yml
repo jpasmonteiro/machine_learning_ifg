@@ -6,6 +6,19 @@ suporte_dw:
       path: "{{ env_var('DUCKDB_PATH', 'data/curated/warehouse.duckdb') }}"
       schema: analytics
       threads: 4
+    # Alvo local cliente-servidor (container do infra/docker-compose.yml). Serve para
+    # provar que a modelagem e' portavel entre warehouses e para o Metabase conectar
+    # por driver NATIVO. Credenciais de desenvolvimento local, descartaveis.
+    postgres:
+      type: postgres
+      host: "{{ env_var('PG_HOST', 'localhost') }}"
+      port: "{{ env_var('PG_PORT', '5433') | int }}"
+      user: "{{ env_var('PG_USER', 'suporte') }}"
+      password: "{{ env_var('PG_PASSWORD', 'suporte') }}"
+      dbname: "{{ env_var('PG_DATABASE', 'suporte_dw') }}"
+      schema: analytics
+      threads: 4
+
     # Alvo de producao em nuvem. Basta exportar as variaveis SNOWFLAKE_* e rodar
     # dbt --target snowflake. A mesma modelagem (sem alteracao de SQL) e' aplicada.
     snowflake:

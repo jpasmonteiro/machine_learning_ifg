@@ -2,8 +2,10 @@
 Executa o projeto dbt de forma programatica (sem depender do dbt na PATH).
 
 `dbt build` roda os modelos (staging -> dimensoes -> fatos -> marts) e, na
-sequencia, os testes de qualidade de dados. Usamos o DuckDB local por padrao;
-para Snowflake, exporte WAREHOUSE_TARGET/SNOWFLAKE_* e ajuste --target.
+sequencia, os testes de qualidade de dados.
+
+O target sai de WAREHOUSE_TARGET (duckdb -> perfil `dev`, postgres, snowflake).
+Os modelos SQL sao identicos nos tres: so' muda a conexao no profiles.yml.
 """
 import os
 import sys
@@ -15,9 +17,13 @@ from config.settings import DUCKDB_PATH
 DBT_DIR = str(pathlib.Path(__file__).resolve().parents[2] / "dbt")
 
 
+# WAREHOUSE_TARGET -> nome do output em dbt/profiles.yml
+TARGETS = {"duckdb": "dev", "postgres": "postgres", "snowflake": "snowflake"}
+
+
 def run(command=None):
     os.environ["DUCKDB_PATH"] = str(DUCKDB_PATH.resolve())
-    target = "snowflake" if os.environ.get("WAREHOUSE_TARGET", "").lower() == "snowflake" else "dev"
+    target = TARGETS.get(os.environ.get("WAREHOUSE_TARGET", "").lower(), "dev")
     from dbt.cli.main import dbtRunner
     runner = dbtRunner()
     args = (command or ["build"]) + ["--project-dir", DBT_DIR,

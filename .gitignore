@@ -4,4 +4,6 @@ __pycache__/
 *.pyc
 dbt/target/
 dbt/logs/
+dbt/.user.yml
+evidencias/airflow_dag_run.full.log
 

@@ -1,11 +1,16 @@
 """
-Orquestrador do pipeline completo da entrega (versao local, sem Airflow).
+Orquestrador do pipeline completo da entrega (execucao direta, sem Airflow).
 
 Nesta versao de entrega, os arquivos brutos ja' ficam materializados em
 data/raw/. A pipeline exige credenciais AWS em .env-aws, provisiona um bucket
 S3 via CloudFormation, valida os arquivos brutos e segue para:
-  processamento/atributos -> ML -> carga no warehouse ->
-  dbt (build + testes) -> export do dashboard -> upload S3.
+  processamento/atributos -> ML -> carga no warehouse -> dbt (build + testes)
+  -> export do dashboard -> publicacao no Postgres -> dashboard no Metabase
+  -> upload S3.
+
+As duas etapas de BI sobem sozinhas os containers de Postgres e Metabase
+(infra/docker-compose.yml). Sem Docker na maquina, elas sao puladas com aviso e
+o restante do pipeline continua normalmente. Para pular de proposito: SKIP_BI=1.
 
 Ao final, os recursos AWS permanecem ativos para inspeção. Use `make destroy`
 para esvaziar o bucket e destruir a stack CloudFormation.
@@ -13,7 +18,8 @@ para esvaziar o bucket e destruir a stack CloudFormation.
 Uso:
     python run_pipeline.py
 
-A DAG do Airflow continua disponivel como referencia de orquestracao.
+A DAG do Airflow (airflow/dags/) roda exatamente estas mesmas etapas de forma
+orquestrada; veja `make airflow-run`.
 """
 from pathlib import Path
 import time
@@ -65,6 +71,25 @@ def export_dashboard_step():
     return export_dashboard.run()
 
 
+def publish_bi_step():
+    """Republica a modelagem no Postgres, fonte lida pelo Metabase.
+
+    Sobe os containers se preciso. Sem Docker, a etapa e' pulada com aviso.
+    """
+    from src.bi import stack, publish_bi
+    if not stack.garantir_stack():
+        return {"pulado": True}
+    return publish_bi.run()
+
+
+def metabase_step():
+    """Cria/atualiza o painel 'Suporte - Apoio a Decisao' com os 3 filtros."""
+    from src.bi import stack, metabase_setup
+    if not stack.garantir_stack():
+        return {"pulado": True}
+    return metabase_setup.run()
+
+
 def s3_upload_step():
     from src.cloud import s3_sync
     return s3_sync.run()
@@ -74,10 +99,12 @@ ETAPAS = [
     ("1. Validacao dos dados brutos existentes", validate_raw_files),
     ("2. Processamento e extracao de atributos", process_features_step),
     ("3. Treino e avaliacao do modelo", train_evaluate_step),
-    ("4. Carga no warehouse (Snowflake/DuckDB)", load_warehouse_step),
+    ("4. Carga no warehouse (DuckDB)", load_warehouse_step),
     ("5. dbt build (modelos + testes)", run_dbt_step),
     ("6. Export do dashboard", export_dashboard_step),
-    ("7. Upload obrigatorio das camadas para o S3", s3_upload_step),
+    ("7. Publicacao da camada analitica no Postgres (BI)", publish_bi_step),
+    ("8. Dashboard no Metabase (cards + filtros)", metabase_step),
+    ("9. Upload obrigatorio das camadas para o S3", s3_upload_step),
 ]
 
 
@@ -91,14 +118,23 @@ def main():
     provision_s3_bucket()
     print(f"    (ok em {time.time()-ini:.1f}s)")
 
+    resultados = {}
     for nome, func in ETAPAS:
         print(f"\n>>> {nome}")
         ini = time.time()
-        func()
+        resultados[nome] = func()
         print(f"    (ok em {time.time()-ini:.1f}s)")
 
     print("\n" + "=" * 64)
     print(f"PIPELINE CONCLUIDO em {time.time()-t0:.1f}s")
+
+    painel = resultados.get("8. Dashboard no Metabase (cards + filtros)") or {}
+    if painel.get("url"):
+        print(f"Dashboard no Metabase: {painel['url']}")
+        print("Airflow (orquestracao): http://localhost:8081  (admin / admin)")
+    else:
+        print("Etapas de BI puladas (sem Docker). Para o dashboard: make stack-up && make bi")
+
     print("Recursos AWS mantidos para validacao. Para remover, execute: make destroy")
     print("=" * 64)
 

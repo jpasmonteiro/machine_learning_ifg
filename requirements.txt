@@ -11,7 +11,14 @@ python-docx==1.2.0
 python-pptx==1.0.2
 boto3>=1.34   # upload para o Amazon S3
 
+# Camada de BI: warehouse Postgres (container) + dashboard no Metabase.
+# O Metabase le o Postgres por driver nativo (sem plugin da comunidade) e o dbt
+# roda os MESMOS modelos nele trocando apenas o target (ver dbt/profiles.yml).
+dbt-postgres==1.11.0
+SQLAlchemy==2.0.44
+psycopg2-binary==2.9.11
+
 # Opcionais (producao em nuvem):
-# apache-airflow>=2.9
+# apache-airflow>=2.9          # aqui o Airflow roda em container (infra/docker-compose.yml)
 # snowflake-connector-python>=3.7
 # dbt-snowflake>=1.7

@@ -1,0 +1,116 @@
+# Ambiente analitico local do projeto: Postgres + Metabase + Airflow.
+#
+# POR QUE POSTGRES
+# O Postgres faz o papel do Snowflake no ambiente local: e' um warehouse
+# cliente-servidor de verdade, e os MESMOS modelos dbt rodam nele sem alterar
+# uma linha de SQL (basta trocar o target). Isso demonstra a portabilidade da
+# modelagem: DuckDB (arquivo) -> Postgres (servidor) -> Snowflake (nuvem).
+# O Metabase se conecta a ele pelo driver NATIVO, sem plugin da comunidade.
+#
+# Subir:    make stack-up      (ou: docker compose -f infra/docker-compose.yml up -d)
+# Derrubar: make stack-down    (mantem os dados)
+#           docker compose -f infra/docker-compose.yml down -v   (apaga tudo)
+#
+# Portas no host: Postgres 5433 | Metabase 3000 | Airflow 8081
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: suporte-postgres
+    environment:
+      POSTGRES_DB: suporte_dw
+      POSTGRES_USER: suporte
+      POSTGRES_PASSWORD: suporte
+    ports:
+      - "5433:5432"          # 5433 no host para nao colidir com um Postgres local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Cria metabase_app e airflow na primeira inicializacao do volume.
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suporte -d suporte_dw"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  metabase:
+    image: metabase/metabase:v0.63.10
+    container_name: suporte-metabase
+    ports:
+      - "3000:3000"
+    environment:
+      # Metadados do Metabase no Postgres, e nao no H2 interno: o painel
+      # provisionado sobrevive a `docker compose down`.
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: 5432
+      MB_DB_DBNAME: metabase_app
+      MB_DB_USER: suporte
+      MB_DB_PASS: suporte
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+
+  airflow:
+    build:
+      context: ..                       # contexto na raiz: precisa do requirements.txt
+      dockerfile: infra/airflow/Dockerfile
+    image: suporte-airflow:2.10.5
+    container_name: suporte-airflow
+    # `airflow standalone` cria sozinho um usuario `admin` com senha ALEATORIA,
+    # gravada em $AIRFLOW_HOME/standalone_admin_password.txt — e ignora as
+    # variaveis _AIRFLOW_WWW_USER_* (essas valem no fluxo `airflow-init` do
+    # compose oficial). Criando o usuario antes, o standalone encontra um usuario
+    # existente e nao gera senha nenhuma: o login fica fixo em admin/admin.
+    command:
+      - bash
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username "$${_AIRFLOW_WWW_USER_USERNAME}" \
+          --password "$${_AIRFLOW_WWW_USER_PASSWORD}" \
+          --firstname Grupo --lastname "Suporte IA" \
+          --role Admin --email admin@suporte.local 2>/dev/null || true
+        exec airflow standalone
+    ports:
+      - "8081:8080"                     # 8081 no host: 8080 costuma estar ocupado
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://suporte:suporte@postgres:5432/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__WORKERS: "2"
+      # Credenciais fixas para o avaliador entrar sem procurar senha gerada.
+      # O usuario PRECISA se chamar `admin`: e' esse nome que o `airflow
+      # standalone` procura para decidir se gera um admin com senha aleatoria.
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
+      # Lidas pelas tasks do pipeline dentro do container.
+      PROJECT_ROOT: /opt/project
+      PIPELINE_PYTHON: /opt/pipeline-venv/bin/python
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      MB_URL: http://metabase:3000
+      # A task de nuvem so' roda se o .env-aws existir; sem ele, a DAG segue verde.
+      AWS_STEP_OPTIONAL: "1"
+    volumes:
+      - ../:/opt/project                # repo inteiro: DAGs, src, data, dbt
+      - airflow_logs:/opt/airflow/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+
+volumes:
+  pgdata:
+  airflow_logs:

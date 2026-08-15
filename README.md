@@ -19,7 +19,7 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 
 ## Entregáveis
 
-- Relatório final em PDF: [relatorio/Projeto_Final.pdf](relatorio/Projeto_Final.pdf)
+- Escopo do projeto PDF: [relatorio/Projeto_Final.pdf](relatorio/Projeto_Final.pdf)
 - Relatório editável: [relatorio/Relatorio_Projeto_Final.docx](relatorio/Relatorio_Projeto_Final.docx)
 - Apresentação: [apresentacao/Apresentacao_Projeto_Final.pptx](apresentacao/Apresentacao_Projeto_Final.pptx)
 - Código executável e dados de entrada na raiz do repositório

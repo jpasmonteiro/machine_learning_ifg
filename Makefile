@@ -8,7 +8,7 @@ help:
 	@echo "  make env      cria .env-aws a partir de .env-aws.example, se ainda nao existir"
 	@echo "  make run      cria .venv, instala dependencias e executa a pipeline completa"
 	@echo "  make destroy  esvazia o bucket S3 e remove a stack CloudFormation"
-	@echo "  make clean    remove saidas geradas localmente, mantendo data/raw"
+	@echo "  make clean    remove artefatos locais da execucao, mantendo data/raw"
 	@echo ""
 	@echo "Antes de make run, preencha .env-aws com as credenciais AWS."
 

@@ -1,8 +1,8 @@
 """
 Exporta os dados agregados dos marts para alimentar o dashboard.
 
-O Metabase se conecta direto ao warehouse (DuckDB/Snowflake). Este script gera,
-adicionalmente, um JSON consolidado usado pelo mockup estatico do dashboard
+O Metabase se conecta direto ao warehouse (DuckDB/Snowflake). Este modulo exporta
+um JSON consolidado usado pelo mockup estatico do dashboard
 (dashboard/mockup.html) e pelas evidencias do relatorio.
 """
 import sys

@@ -37,7 +37,7 @@ Os arquivos usados pela pipeline já estão incluídos no repositório da entreg
 - `data/raw/ticket_messages.jsonl`
 - `data/raw/ticket_events.json`
 
-Eles ficam versionados como base de entrada da entrega. Ao executar `run_pipeline.py`, a pipeline não gera novos dados brutos; ela valida a existência desses três arquivos e segue para processamento, modelagem, warehouse, dbt e dashboard.
+Eles ficam versionados como base de entrada da entrega. Ao executar `run_pipeline.py`, a pipeline valida a existência desses três arquivos e segue para processamento, modelagem, warehouse, dbt e dashboard.
 
 ## Arquivo obrigatório `.env-aws`
 
@@ -159,7 +159,7 @@ O comando executa:
 
 ## Saídas esperadas
 
-Após a execução, serão criados ou atualizados:
+Após a execução, ficam disponíveis:
 
 - `data/raw/`: dados brutos de entrada, já incluídos na entrega.
 - `data/processed/`: features e predições.
@@ -180,7 +180,7 @@ python -m src.warehouse.run_dbt
 python -m src.warehouse.export_dashboard
 ```
 
-A pipeline principal da entrega não recria os dados brutos; ela usa exclusivamente os arquivos versionados em `data/raw/`.
+A pipeline principal da entrega usa exclusivamente os arquivos versionados em `data/raw/`.
 
 Também é possível usar o Makefile:
 

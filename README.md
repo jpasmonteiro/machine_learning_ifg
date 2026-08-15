@@ -187,9 +187,9 @@ data/raw/ticket_messages.jsonl
 data/raw/ticket_events.json
 ```
 
-## Saídas geradas
+## Saídas da execução
 
-Após `make run`, as principais saídas ficam em:
+Após `make run`, os principais artefatos ficam em:
 
 ```text
 data/processed/

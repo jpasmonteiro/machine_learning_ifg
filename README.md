@@ -1,158 +1,283 @@
-# Pipeline de Dados em Nuvem para Aprendizagem de Máquina
+# Projeto Final - IA para Suporte e SLA
 
-Projeto Final Integrado - IFG, Pós-Graduação em Inteligência Artificial Aplicada (Módulo 2).
-Disciplinas integradas: Modelagem de Dados para IA, Aprendizagem de Máquina e Cloud Computing.
+Projeto Final Integrado - IFG, Pós-Graduação em Inteligência Artificial Aplicada.
 
-**Entregáveis:** [Apresentação](docs/Apresentacao_Projeto_Final.pptx) · [Relatório](docs/Relatorio_Projeto_Final.docx) · [Dicionário de dados](docs/dicionario_de_dados.md) · [Checklist de requisitos](docs/checklist_requisitos.md)
+Este repositório contém a entrega final do projeto: código executável, dados de entrada, relatório, apresentação, evidências e instruções completas de execução.
 
-**Problema:** Prever quais chamados de suporte técnico têm maior risco de **violar o SLA de
-resolução,** para que o gestor consiga priorizar a fila e realocar agentes antes do prazo estourar.
+## Objetivo
 
-## Integrantes
+O projeto implementa um pipeline de dados e aprendizagem de máquina para prever quais chamados de suporte técnico têm maior risco de violar o SLA de resolução. A previsão apoia o gestor de suporte na priorização da fila e na realocação de agentes antes que o prazo seja estourado.
 
-- João Paulo Monteiro
-- Pedro Felipe De Moraes Carrijo
-- Rogério dos Anjos
+A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA de resolução definido pela prioridade.
 
-> Substitua os nomes acima pelos integrantes reais do grupo.
+| Prioridade | SLA de resolução |
+|---|---:|
+| Crítica | 240 min |
+| Alta | 480 min |
+| Média | 1440 min |
+| Baixa | 2880 min |
+
+## Entregáveis
+
+- Relatório final em PDF: [relatorio/Projeto_Final.pdf](relatorio/Projeto_Final.pdf)
+- Relatório editável: [relatorio/Relatorio_Projeto_Final.docx](relatorio/Relatorio_Projeto_Final.docx)
+- Apresentação: [apresentacao/Apresentacao_Projeto_Final.pptx](apresentacao/Apresentacao_Projeto_Final.pptx)
+- Código executável e dados de entrada na raiz do repositório
+- Dashboard local: [dashboard/mockup.html](dashboard/mockup.html)
+
+## Estrutura principal
+
+```text
+.
+├── README.md                         # guia principal da entrega
+├── Makefile                          # comandos make env, make run e make destroy
+├── .env-aws.example                  # modelo de credenciais AWS
+├── requirements.txt                  # dependências Python
+├── run_pipeline.py                   # orquestrador principal
+├── data/
+│   ├── raw/                          # dados brutos já materializados
+│   ├── processed/                    # saídas processadas/features
+│   └── curated/                      # warehouse DuckDB e dados do dashboard
+├── src/                              # código-fonte Python
+├── config/                           # configurações do projeto
+├── dbt/                              # modelos e testes dbt
+├── dashboard/                        # mockup HTML e consultas Metabase
+├── infra/                            # CloudFormation, custos e diagrama AWS
+├── evidencias/                       # métricas, matriz de confusão, ROC e dashboard
+├── relatorio/                        # relatório final
+├── apresentacao/                     # slides da apresentação
+└── airflow/                          # DAG de referência do Airflow
+```
 
 ## Visão geral da solução
 
-Pipeline ELT completo, do dado bruto até o dashboard de decisão:
+Fluxo principal:
 
-```
-ingestão  ->  processamento/atributos  ->  ML (treino+avaliação)  ->  carga no warehouse
-   ->  dbt (staging/dims/facts + testes)  ->  export  ->  dashboard (Metabase)
-```
-
-- **Dados (3 fontes):** estruturada (CSV de tickets), não estruturada (texto livre, JSONL) e
-  semiestruturada (logs de eventos, JSON).
-- **Warehouse:** DuckDB local como *proxy* do Snowflake (a mesma modelagem dbt roda nos dois).
-- **ML:** classificação binária (sla_breach), com baseline, versão *hard-code* (NumPy) e versão
-  com biblioteca (scikit-learn), além de Random Forest.
-- **Nuvem:** Amazon S3 + template CloudFormation (infra/cloudformation.yaml) e diagrama 100% AWS.
-- **Dashboard:** Metabase (queries em dashboard/) + mockup navegável (dashboard/mockup.html).
-
-## Estrutura do repositório
-
-```
-.
-├── config/                 # configuração central (caminhos, constantes, SLA)
-├── src/
-│   ├── ingestion/          # geração/ingestão dos dados brutos
-│   ├── processing/         # limpeza e extração de atributos
-│   ├── ml/                 # knn_scratch (hard-code), features, train_evaluate
-│   ├── warehouse/          # carga (DuckDB/Snowflake), execução dbt, export
-│   └── cloud/              # upload das camadas para o Amazon S3 (boto3)
-├── dbt/                    # projeto dbt (models staging + marts, testes, macros)
-├── airflow/dags/           # DAG do Airflow
-├── infra/                  # CloudFormation, diagrama AWS, custos
-├── dashboard/              # queries Metabase, guia e mockup
-├── docs/                   # relatório (.docx), apresentação (.pptx), dicionário de dados
-├── evidencias/             # prints/saídas (métricas, matriz de confusão, ROC, dashboard)
-├── run_pipeline.py         # roda o pipeline inteiro localmente
-└── requirements.txt
+```text
+dados raw -> processamento/features -> machine learning -> warehouse DuckDB -> dbt -> dashboard -> S3
 ```
 
-## Como executar (local, sem nuvem)
+O projeto inclui:
 
-Requisitos: Python 3.10+.
+- Dados brutos já materializados em `data/raw/`.
+- Três fontes: estruturada (`tickets.csv`), não estruturada (`ticket_messages.jsonl`) e semiestruturada (`ticket_events.json`).
+- Processamento e extração de atributos de negócio, texto e logs.
+- Modelos de classificação: baseline, KNN hard-code, KNN scikit-learn, SVM e MLP.
+- Warehouse local em DuckDB como proxy de Snowflake.
+- Modelagem dbt com staging, dimensões, fatos, mart de ML, mart de decisão e testes.
+- Provisionamento obrigatório de bucket Amazon S3 via CloudFormation.
+- Upload das camadas `raw`, `processed` e `curated` para o S3.
+- Dashboard em mockup HTML e consultas para Metabase.
+
+## Como executar
+
+### 1. Criar o arquivo de credenciais AWS
 
 ```bash
-pip install -r requirements.txt
-python run_pipeline.py
+make env
 ```
 
-Isso executa todas as etapas e gera:
+Esse comando cria `.env-aws` a partir de `.env-aws.example`. Preencha o arquivo com suas credenciais AWS:
 
-- `data/raw/`, `data/processed/` e `data/curated/warehouse.duckdb`;
-- `evidencias/metrics.json`, `matriz_confusao.png`, `curva_roc.png`, `dashboard_mockup.png`;
-- `data/curated/dashboard/dashboard_data.json` (alimenta o mockup do dashboard).
+```text
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+# Para AWS Academy, descomente e cole o token completo.
+# AWS_SESSION_TOKEN=...
+AWS_DEFAULT_REGION=us-east-1
+CFN_STACK_NAME=suporte-sla-entrega
+PROJECT_NAME=suporte-sla-entrega
+S3_PREFIX=suporte-sla
+```
 
-Para rodar etapas isoladas:
+O arquivo `.env-aws` contém credenciais e não deve ser commitado.
+
+### 2. Permissões AWS necessárias
+
+A credencial usada no `.env-aws` precisa permitir:
+
+- `sts:GetCallerIdentity`
+- `cloudformation:CreateStack`
+- `cloudformation:UpdateStack`
+- `cloudformation:DescribeStacks`
+- `cloudformation:DescribeStackEvents`
+- `cloudformation:DeleteStack`
+- `s3:CreateBucket`
+- `s3:PutEncryptionConfiguration`
+- `s3:PutBucketPublicAccessBlock`
+- `s3:PutObject`
+- `s3:ListBucket`
+- `s3:GetBucketLocation`
+- `s3:DeleteObject`
+- `s3:DeleteBucket`
+
+Policy IAM de exemplo:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "cloudformation:CreateStack",
+        "cloudformation:UpdateStack",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:DeleteStack"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:PutEncryptionConfiguration",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:DeleteObject",
+        "s3:DeleteBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::suporte-sla-entrega-*",
+        "arn:aws:s3:::suporte-sla-entrega-*/*"
+      ]
+    }
+  ]
+}
+```
+
+### 3. Rodar o pipeline completo
 
 ```bash
-python -m src.ingestion.generate_data       # 1. ingestão
-python -m src.processing.process_features   # 2. processamento/atributos
-python -m src.ml.train_evaluate             # 3. ML (hard-code + sklearn + RF)
-python -m src.warehouse.load_warehouse      # 4. carga no warehouse
-python -m src.warehouse.run_dbt             # 5. dbt build (modelos + testes)
-python -m src.warehouse.export_dashboard    # 6. export do dashboard
+make run
 ```
 
-## Como executar com Airflow
+O `make run` cria a `.venv`, instala as dependências e executa o pipeline completo.
 
-Copie `airflow/dags/pipeline_suporte_dag.py` para a pasta `dags/` do seu Airflow (ou use o
-docker-compose oficial do Airflow) e defina `PROJECT_ROOT` apontando para esta pasta. A DAG
-`pipeline_suporte_tecnico` reproduz as mesmas etapas do `run_pipeline.py`.
+A execução faz:
 
-## Como apontar para Snowflake (produção)
+1. Lê obrigatoriamente o `.env-aws`.
+2. Cria ou atualiza a stack CloudFormation.
+3. Provisiona um bucket S3.
+4. Valida os dados brutos já existentes em `data/raw/`.
+5. Processa atributos estruturados, textuais e de logs.
+6. Treina e avalia os modelos.
+7. Carrega o warehouse DuckDB.
+8. Executa os modelos e testes dbt.
+9. Exporta dados para o dashboard.
+10. Envia as camadas `raw`, `processed` e `curated` para o S3.
 
-A modelagem dbt é a mesma. Exporte as variáveis e troque o alvo:
+Ao final, os recursos AWS permanecem ativos para validação no console. Para remover tudo depois da validação:
 
 ```bash
-export WAREHOUSE_TARGET=snowflake
-export SNOWFLAKE_ACCOUNT=... SNOWFLAKE_USER=... SNOWFLAKE_PASSWORD=...
-export SNOWFLAKE_DATABASE=SUPORTE_DW SNOWFLAKE_WAREHOUSE=COMPUTE_WH
-python -m src.warehouse.load_warehouse
-python -m src.warehouse.run_dbt
+make destroy
 ```
 
-## Como provisionar a infraestrutura AWS
+O `make destroy` esvazia o bucket S3 e remove a stack CloudFormation.
 
-```bash
-aws cloudformation deploy \
-  --template-file infra/cloudformation.yaml \
-  --stack-name suporte-ia-dev \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides ProjectName=suporte-ia Environment=dev
+## Dados de entrada
+
+Os dados de entrada já estão versionados em:
+
+```text
+data/raw/tickets.csv
+data/raw/ticket_messages.jsonl
+data/raw/ticket_events.json
 ```
 
-## Enviar os dados para o S3 (uso real de serviço AWS)
+Eles foram gerados uma única vez pelo script sintético do projeto, com semente fixa, e não são recriados durante a execução principal. O script de geração permanece no repositório apenas para rastreabilidade.
 
-A etapa `src/cloud/s3_sync.py` envia as camadas `raw/processed/curated` para o bucket
-(via boto3). Ela roda automaticamente no fim do `run_pipeline.py` quando o bucket está
-definido; sem `S3_BUCKET`, é pulada e a execução continua local.
+## Saídas geradas
 
-```bash
-export S3_BUCKET=$(aws cloudformation describe-stacks --stack-name suporte-ia-dev \
-  --query "Stacks[0].Outputs[?OutputKey=='RawBucketName'].OutputValue" --output text)
-export S3_PREFIX=suporte-sla
-pip install boto3
-python -m src.cloud.s3_sync     # ou rode o pipeline inteiro: python run_pipeline.py
+Após `make run`, as principais saídas ficam em:
+
+```text
+data/processed/
+data/curated/warehouse.duckdb
+data/curated/dashboard/dashboard_data.json
+evidencias/metrics.json
+evidencias/matriz_confusao.png
+evidencias/curva_roc.png
+evidencias/dashboard_mockup.png
 ```
 
-> A lógica de upload foi validada localmente com um S3 simulado (biblioteca `moto`).
+No S3, os arquivos são enviados para um bucket com nome parecido com:
 
-## Rodando na AWS Academy (Learner Lab)
-
-O Learner Lab bloqueia a criacao de IAM Roles. Use o template
-`infra/cloudformation-academy.yaml` (que reutiliza o `LabRole` em vez de criar um) e o
-upload S3, que nao exige role. Passo a passo completo em `docs/aws_academy.md`.
-
-```bash
-export AWS_ACCESS_KEY_ID=...  AWS_SECRET_ACCESS_KEY=...  AWS_SESSION_TOKEN=...
-export AWS_DEFAULT_REGION=us-east-1
-aws cloudformation deploy --template-file infra/cloudformation-academy.yaml --stack-name suporte-ia
-export S3_BUCKET=$(aws cloudformation describe-stacks --stack-name suporte-ia \
-  --query "Stacks[0].Outputs[?OutputKey=='RawBucketName'].OutputValue" --output text)
-python -m src.cloud.s3_sync
+```text
+s3://suporte-sla-entrega-<id-da-conta>-us-east-1/suporte-sla/
 ```
 
-## Dashboard (Metabase)
+Dentro dele ficam as camadas:
 
-Veja `dashboard/README_metabase.md`. As consultas de cada card estão em
-`dashboard/metabase_queries.sql`. Para uma prévia rápida sem instalar nada, abra
-`dashboard/mockup.html` no navegador.
+```text
+suporte-sla/raw/
+suporte-sla/processed/
+suporte-sla/curated/
+```
 
-## Resultados (resumo)
+## Dashboard
 
-| Modelo             | Acurácia | Precisão | Recall |  F1  | ROC-AUC |
-| ------------------ | :-------: | :-------: | :----: | :---: | :-----: |
-| KNN (hard-code)    |   0,838   |   0,762   | 0,421 | 0,542 |  0,882  |
-| KNN (scikit-learn) |   0,838   |   0,762   | 0,421 | 0,542 |  0,882  |
-| SVM (produção)   |   0,903   |   0,854   | 0,693 | 0,765 |  0,953  |
-| MLP                |   0,888   |   0,747   | 0,765 | 0,756 |  0,944  |
+O dashboard é a camada de visualização e apoio à decisão. Ele transforma os dados tratados e as predições do modelo em indicadores para o gestor de suporte.
 
-O KNN *na mão* e o do scikit-learn ficaram idênticos (concordância de 100% nas predições),
-confirmando a corretude da implementação manual. Todos os testes do dbt passaram (PASS=22).
+Ele responde perguntas como:
+
+- quantos chamados existem;
+- qual é a taxa de violação de SLA;
+- quais prioridades, categorias e canais mais violam SLA;
+- quais chamados têm maior risco previsto;
+- como o modelo está performando.
+
+### Abrir o dashboard rapidamente
+
+Depois de rodar `make run`, abra este arquivo no navegador:
+
+[dashboard/mockup.html](dashboard/mockup.html)
+
+Esse mockup usa os dados exportados em:
+
+```text
+data/curated/dashboard/dashboard_data.json
+```
+
+### Dashboard em Metabase
+
+As consultas SQL dos cards estão em:
+
+[dashboard/metabase_queries.sql](dashboard/metabase_queries.sql)
+
+O guia específico do Metabase está em:
+
+[dashboard/README_metabase.md](dashboard/README_metabase.md)
+
+Em produção, o Metabase poderia se conectar ao warehouse analítico. Na entrega local, o mockup HTML é a forma mais simples de visualizar o resultado sem instalar ferramenta adicional.
+
+## Resultados principais
+
+| Modelo | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| Baseline majoritária | 0.772 | 0.000 | 0.000 | 0.000 | 0.500 |
+| Baseline por prioridade | 0.771 | 0.498 | 0.629 | 0.556 | 0.721 |
+| KNN hard-code | 0.838 | 0.762 | 0.421 | 0.542 | 0.882 |
+| KNN scikit-learn | 0.838 | 0.762 | 0.421 | 0.542 | 0.882 |
+| SVM | 0.903 | 0.854 | 0.693 | 0.765 | 0.953 |
+| MLP | 0.888 | 0.747 | 0.765 | 0.756 | 0.944 |
+
+O KNN implementado manualmente teve 100% de concordância com o KNN do scikit-learn, validando a implementação hard-code. O melhor modelo por F1 foi o SVM, selecionado como modelo de produção.
+
+Na execução dbt validada, todos os testes passaram:
+
+```text
+PASS=22 WARN=0 ERROR=0 SKIP=0 TOTAL=22
+```
+
+## Observações importantes
+
+- O serviço AWS usado de fato na execução é o Amazon S3.
+- O bucket é provisionado por CloudFormation durante `make run`.
+- O bucket não é destruído automaticamente, para permitir validação no console AWS.
+- Para limpar os recursos AWS, use `make destroy`.
+- O arquivo `.env-aws` contém credenciais e não deve ser commitado.

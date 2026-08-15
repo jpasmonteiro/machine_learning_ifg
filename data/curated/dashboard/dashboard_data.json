@@ -1,0 +1,337 @@
+{
+  "kpis": {
+    "total_chamados": 8000.0,
+    "taxa_violacao_pct": 22.8,
+    "tempo_medio_resolucao_min": 853.1,
+    "tempo_medio_1a_resposta_min": 154.3,
+    "taxa_reabertura_pct": 10.2,
+    "csat_medio": 3.97
+  },
+  "por_categoria": [
+    {
+      "category": "Solicitação de Recurso",
+      "chamados": 800,
+      "taxa_violacao_pct": 68.5
+    },
+    {
+      "category": "Bug / Defeito",
+      "chamados": 1100,
+      "taxa_violacao_pct": 46.8
+    },
+    {
+      "category": "Problema Técnico",
+      "chamados": 1579,
+      "taxa_violacao_pct": 32.2
+    },
+    {
+      "category": "Faturamento",
+      "chamados": 1017,
+      "taxa_violacao_pct": 13.5
+    },
+    {
+      "category": "Cancelamento",
+      "chamados": 825,
+      "taxa_violacao_pct": 10.1
+    },
+    {
+      "category": "Acesso e Conta",
+      "chamados": 1307,
+      "taxa_violacao_pct": 2.1
+    },
+    {
+      "category": "Dúvida / Como Fazer",
+      "chamados": 1372,
+      "taxa_violacao_pct": 0.5
+    }
+  ],
+  "por_prioridade": [
+    {
+      "priority": "Crítica",
+      "chamados": 654,
+      "taxa_violacao_pct": 60.4
+    },
+    {
+      "priority": "Alta",
+      "chamados": 1711,
+      "taxa_violacao_pct": 47.3
+    },
+    {
+      "priority": "Média",
+      "chamados": 3266,
+      "taxa_violacao_pct": 15.6
+    },
+    {
+      "priority": "Baixa",
+      "chamados": 2369,
+      "taxa_violacao_pct": 4.8
+    }
+  ],
+  "por_canal": [
+    {
+      "channel": "Email",
+      "chamados": 2771,
+      "taxa_violacao_pct": 25.2
+    },
+    {
+      "channel": "Chat",
+      "chamados": 1934,
+      "taxa_violacao_pct": 19.3
+    },
+    {
+      "channel": "Telefone",
+      "chamados": 1260,
+      "taxa_violacao_pct": 17.1
+    },
+    {
+      "channel": "Formulário Web",
+      "chamados": 1237,
+      "taxa_violacao_pct": 24.4
+    },
+    {
+      "channel": "Redes Sociais",
+      "chamados": 798,
+      "taxa_violacao_pct": 29.8
+    }
+  ],
+  "por_mes": [
+    {
+      "mes": 1,
+      "chamados": 666,
+      "taxa_violacao_pct": 23.4
+    },
+    {
+      "mes": 2,
+      "chamados": 576,
+      "taxa_violacao_pct": 25.7
+    },
+    {
+      "mes": 3,
+      "chamados": 715,
+      "taxa_violacao_pct": 21.1
+    },
+    {
+      "mes": 4,
+      "chamados": 626,
+      "taxa_violacao_pct": 20.8
+    },
+    {
+      "mes": 5,
+      "chamados": 655,
+      "taxa_violacao_pct": 23.5
+    },
+    {
+      "mes": 6,
+      "chamados": 657,
+      "taxa_violacao_pct": 21.6
+    },
+    {
+      "mes": 7,
+      "chamados": 676,
+      "taxa_violacao_pct": 22.9
+    },
+    {
+      "mes": 8,
+      "chamados": 743,
+      "taxa_violacao_pct": 22.9
+    },
+    {
+      "mes": 9,
+      "chamados": 653,
+      "taxa_violacao_pct": 21.9
+    },
+    {
+      "mes": 10,
+      "chamados": 709,
+      "taxa_violacao_pct": 22.1
+    },
+    {
+      "mes": 11,
+      "chamados": 658,
+      "taxa_violacao_pct": 24.2
+    },
+    {
+      "mes": 12,
+      "chamados": 666,
+      "taxa_violacao_pct": 24.2
+    }
+  ],
+  "distribuicao_risco": [
+    {
+      "faixa_risco": "Alto",
+      "chamados": 339
+    },
+    {
+      "faixa_risco": "Médio",
+      "chamados": 951
+    },
+    {
+      "faixa_risco": "Baixo",
+      "chamados": 710
+    }
+  ],
+  "matriz_confusao": [
+    {
+      "real": 0,
+      "previsto": 0,
+      "n": 1490
+    },
+    {
+      "real": 0,
+      "previsto": 1,
+      "n": 54
+    },
+    {
+      "real": 1,
+      "previsto": 0,
+      "n": 140
+    },
+    {
+      "real": 1,
+      "previsto": 1,
+      "n": 316
+    }
+  ],
+  "top_risco": [
+    {
+      "ticket_id": "TCK-006472",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "Relatórios",
+      "customer_tier": "Basic",
+      "prob_violacao": 1.0
+    },
+    {
+      "ticket_id": "TCK-006280",
+      "priority": "Crítica",
+      "category": "Solicitação de Recurso",
+      "product": "Plataforma Web",
+      "customer_tier": "Free",
+      "prob_violacao": 0.996
+    },
+    {
+      "ticket_id": "TCK-002955",
+      "priority": "Crítica",
+      "category": "Solicitação de Recurso",
+      "product": "Plataforma Web",
+      "customer_tier": "Free",
+      "prob_violacao": 0.982
+    },
+    {
+      "ticket_id": "TCK-002066",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "App Mobile",
+      "customer_tier": "Free",
+      "prob_violacao": 0.978
+    },
+    {
+      "ticket_id": "TCK-000772",
+      "priority": "Crítica",
+      "category": "Solicitação de Recurso",
+      "product": "Integrações",
+      "customer_tier": "Free",
+      "prob_violacao": 0.978
+    },
+    {
+      "ticket_id": "TCK-004461",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "Relatórios",
+      "customer_tier": "Free",
+      "prob_violacao": 0.977
+    },
+    {
+      "ticket_id": "TCK-000848",
+      "priority": "Alta",
+      "category": "Bug / Defeito",
+      "product": "Relatórios",
+      "customer_tier": "Free",
+      "prob_violacao": 0.957
+    },
+    {
+      "ticket_id": "TCK-000012",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "Integrações",
+      "customer_tier": "Free",
+      "prob_violacao": 0.953
+    },
+    {
+      "ticket_id": "TCK-002451",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "Relatórios",
+      "customer_tier": "Free",
+      "prob_violacao": 0.948
+    },
+    {
+      "ticket_id": "TCK-003066",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "API",
+      "customer_tier": "Premium",
+      "prob_violacao": 0.946
+    },
+    {
+      "ticket_id": "TCK-000551",
+      "priority": "Crítica",
+      "category": "Solicitação de Recurso",
+      "product": "Integrações",
+      "customer_tier": "Premium",
+      "prob_violacao": 0.943
+    },
+    {
+      "ticket_id": "TCK-001492",
+      "priority": "Alta",
+      "category": "Solicitação de Recurso",
+      "product": "Relatórios",
+      "customer_tier": "Free",
+      "prob_violacao": 0.94
+    }
+  ],
+  "metricas_modelo": {
+    "baseline_majoritaria": {
+      "accuracy": 0.772,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5
+    },
+    "baseline_regra_prioridade": {
+      "accuracy": 0.771,
+      "precision": 0.4983,
+      "recall": 0.6294,
+      "f1": 0.5562,
+      "roc_auc": 0.7211
+    },
+    "knn_hardcode": {
+      "accuracy": 0.838,
+      "precision": 0.7619,
+      "recall": 0.4211,
+      "f1": 0.5424,
+      "roc_auc": 0.8821
+    },
+    "knn_sklearn": {
+      "accuracy": 0.838,
+      "precision": 0.7619,
+      "recall": 0.4211,
+      "f1": 0.5424,
+      "roc_auc": 0.8821
+    },
+    "svm": {
+      "accuracy": 0.903,
+      "precision": 0.8541,
+      "recall": 0.693,
+      "f1": 0.7651,
+      "roc_auc": 0.9529
+    },
+    "mlp": {
+      "accuracy": 0.8875,
+      "precision": 0.7473,
+      "recall": 0.7654,
+      "f1": 0.7562,
+      "roc_auc": 0.9443
+    }
+  },
+  "modelo_producao": "svm"
+}

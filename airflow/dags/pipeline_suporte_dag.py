@@ -25,8 +25,18 @@ if PROJECT_ROOT not in sys.path:
 
 
 def _ingestao():
-    from src.ingestion import generate_data
-    generate_data.generate()
+    from pathlib import Path
+    from config.settings import RAW_DIR
+
+    expected = [
+        RAW_DIR / "tickets.csv",
+        RAW_DIR / "ticket_messages.jsonl",
+        RAW_DIR / "ticket_events.json",
+    ]
+    missing = [str(path) for path in expected if not Path(path).is_file()]
+    if missing:
+        raise FileNotFoundError("Arquivos brutos ausentes: " + ", ".join(missing))
+    print("Arquivos brutos encontrados em data/raw.")
 
 
 def _processamento():

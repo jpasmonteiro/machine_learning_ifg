@@ -3,12 +3,11 @@ Sincronizacao das camadas de dados com o Amazon S3 (uso real de servico AWS).
 
 Envia os arquivos das camadas raw / processed / curated para o bucket S3,
 organizando por prefixo (data lake em camadas). A etapa e' ativada quando a
-variavel de ambiente S3_BUCKET esta definida e ha credenciais AWS disponiveis;
-caso contrario, faz fallback local (apenas registra que pulou) para que o
-pipeline continue rodando sem nuvem.
+variavel de ambiente S3_BUCKET esta definida pelo provisionamento
+CloudFormation da pipeline. Nesta entrega, o upload para S3 e' obrigatorio.
 
 Uso:
-    export S3_BUCKET=meu-bucket            # nome do bucket (ex.: saida do CloudFormation)
+    export S3_BUCKET=meu-bucket            # nome do bucket (saida do CloudFormation)
     export S3_PREFIX=suporte-sla           # opcional (default: suporte-sla)
     pip install boto3
     python -m src.cloud.s3_sync
@@ -26,15 +25,15 @@ LAYERS = {"raw": RAW_DIR, "processed": PROCESSED_DIR, "curated": CURATED_DIR}
 def run():
     bucket = os.environ.get("S3_BUCKET")
     if not bucket:
-        print("[s3] S3_BUCKET nao definido -> upload pulado (modo local). "
-              "Defina S3_BUCKET para enviar os dados ao S3.")
-        return {"uploaded": 0, "skipped": True}
+        raise RuntimeError(
+            "S3_BUCKET nao definido. A pipeline da entrega deve provisionar "
+            "o bucket via CloudFormation antes do upload."
+        )
 
     try:
         import boto3  # import tardio: so e' exigido quando o S3 esta ativo
     except ImportError:
-        print("[s3] boto3 nao instalado -> upload pulado. Instale com: pip install boto3")
-        return {"uploaded": 0, "skipped": True}
+        raise RuntimeError("boto3 nao instalado. Execute: pip install -r requirements.txt")
 
     prefix = os.environ.get("S3_PREFIX", "suporte-sla").strip("/")
     s3 = boto3.client("s3")
@@ -48,6 +47,8 @@ def run():
                 total += 1
     print(f"[s3] {total} arquivos enviados para s3://{bucket}/{prefix}/ "
           f"(camadas: raw, processed, curated)")
+    if total == 0:
+        raise RuntimeError("Nenhum arquivo foi enviado ao S3.")
     return {"uploaded": total, "skipped": False}
 
 

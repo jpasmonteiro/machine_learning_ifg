@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Bucket S3 obrigatorio para execucao da entrega local do pipeline de SLA.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: suporte-sla-entrega
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{2,40}[a-z0-9]$"
+    Description: Prefixo em letras minusculas usado no nome do bucket.
+
+Resources:
+  PipelineBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${AWS::AccountId}-${AWS::Region}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  BucketName:
+    Description: Bucket S3 usado pela pipeline para raw, processed e curated.
+    Value: !Ref PipelineBucket
+

@@ -11,11 +11,11 @@ O projeto implementa um pipeline de dados e aprendizagem de máquina para prever
 A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA de resolução definido pela prioridade.
 
 | Prioridade | SLA de resolução |
-|---|---:|
-| Crítica | 240 min |
-| Alta | 480 min |
-| Média | 1440 min |
-| Baixa | 2880 min |
+| ---------- | -----------------: |
+| Crítica   |            240 min |
+| Alta       |            480 min |
+| Média     |           1440 min |
+| Baixa      |           2880 min |
 
 ## Entregáveis
 
@@ -89,8 +89,6 @@ CFN_STACK_NAME=suporte-sla-entrega
 PROJECT_NAME=suporte-sla-entrega
 S3_PREFIX=suporte-sla
 ```
-
-O arquivo `.env-aws` contém credenciais e não deve ser commitado.
 
 ### 2. Permissões AWS necessárias
 
@@ -257,14 +255,14 @@ Em produção, o Metabase poderia se conectar ao warehouse analítico. Na entreg
 
 ## Resultados principais
 
-| Modelo | Accuracy | Precision | Recall | F1 | ROC-AUC |
-|---|---:|---:|---:|---:|---:|
-| Baseline majoritária | 0.772 | 0.000 | 0.000 | 0.000 | 0.500 |
-| Baseline por prioridade | 0.771 | 0.498 | 0.629 | 0.556 | 0.721 |
-| KNN hard-code | 0.838 | 0.762 | 0.421 | 0.542 | 0.882 |
-| KNN scikit-learn | 0.838 | 0.762 | 0.421 | 0.542 | 0.882 |
-| SVM | 0.903 | 0.854 | 0.693 | 0.765 | 0.953 |
-| MLP | 0.888 | 0.747 | 0.765 | 0.756 | 0.944 |
+| Modelo                  | Accuracy | Precision | Recall |    F1 | ROC-AUC |
+| ----------------------- | -------: | --------: | -----: | ----: | ------: |
+| Baseline majoritária   |    0.772 |     0.000 |  0.000 | 0.000 |   0.500 |
+| Baseline por prioridade |    0.771 |     0.498 |  0.629 | 0.556 |   0.721 |
+| KNN hard-code           |    0.838 |     0.762 |  0.421 | 0.542 |   0.882 |
+| KNN scikit-learn        |    0.838 |     0.762 |  0.421 | 0.542 |   0.882 |
+| SVM                     |    0.903 |     0.854 |  0.693 | 0.765 |   0.953 |
+| MLP                     |    0.888 |     0.747 |  0.765 | 0.756 |   0.944 |
 
 O KNN implementado manualmente teve 100% de concordância com o KNN do scikit-learn, validando a implementação hard-code. O melhor modelo por F1 foi o SVM, selecionado como modelo de produção.
 

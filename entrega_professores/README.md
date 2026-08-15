@@ -17,7 +17,7 @@ roteiro para a apresentação gravada.
 Repositório com códigos, instruções de execução, documentação técnica, relatório e evidências:
 
 ```text
-https://github.com/jpasmonteiro/machine_learning_ifg/tree/main/projeto-final-ia-suporte-sla
+https://github.com/jpasmonteiro/machine_learning_ifg
 ```
 
 ## Como validar rapidamente

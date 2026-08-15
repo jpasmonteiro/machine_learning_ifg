@@ -47,7 +47,7 @@ docker run -d -p 3000:3000 --name metabase metabase/metabase
 ## Filtros
 
 O dashboard tem filtros de **prioridade**, **categoria**, **canal** e **mes**,
-aplicados sobre `fct_tickets` e `mart_ticket_decision`.
+aplicados sobre `fct_tickets` e `mart_ticket_decisio`jkfadklasfsfsdese
 
 ## Como o dashboard apoia a decisao
 

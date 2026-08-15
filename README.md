@@ -187,8 +187,6 @@ data/raw/ticket_messages.jsonl
 data/raw/ticket_events.json
 ```
 
-Eles foram gerados uma única vez pelo script sintético do projeto, com semente fixa, e não são recriados durante a execução principal. O script de geração permanece no repositório apenas para rastreabilidade.
-
 ## Saídas geradas
 
 Após `make run`, as principais saídas ficam em:

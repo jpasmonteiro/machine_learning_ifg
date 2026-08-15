@@ -1,10 +1,11 @@
 # Dashboard de Apoio a Decisao (Metabase)
 
-O dashboard final e' construido no **Metabase**, conectado diretamente ao
+O dashboard final é construido no **Metabase**, conectado diretamente ao
 warehouse (DuckDB no ambiente local; Snowflake em producao). As consultas de
 cada card estao em `metabase_queries.sql`.
 
 Para registro e uso no relatorio/apresentacao, geramos tambem:
+
 - `mockup.html` - versao estatica navegavel do painel (abre no navegador);
 - `../evidencias/dashboard_mockup.png` - imagem do painel.
 
@@ -26,22 +27,22 @@ docker run -d -p 3000:3000 --name metabase metabase/metabase
 #    dashboard "Suporte - Apoio a Decisao".
 ```
 
-> Observacao pratica: o driver de DuckDB no Metabase e' um plugin da comunidade.
-> Em producao a conexao recomendada e' o Snowflake (driver nativo). Por isso o
+> Observacao pratica: o driver de DuckDB no Metabase é um plugin da comunidade.
+> Em producao a conexao recomendada é o Snowflake (driver nativo). Por isso o
 > `mockup.html`/`.png` documentam o resultado de forma independente do driver.
 
 ## Cards do dashboard
 
-| Card | Pergunta de negocio | Fonte |
-|------|---------------------|-------|
-| KPIs | Qual o panorama geral do suporte? | `fct_tickets` |
-| Violacao por prioridade | Onde o SLA mais estoura? | `fct_tickets` |
-| Violacao por categoria | Que tipos de chamado sao mais criticos? | `fct_tickets` |
-| Evolucao mensal | A situacao esta melhorando ou piorando? | `fct_tickets` |
-| Violacao por canal | Algum canal exige mais atencao? | `fct_tickets` |
-| Fila priorizada por risco | Quais chamados atacar AGORA? | `mart_ticket_decision` |
-| Distribuicao de risco | Qual o tamanho do risco na fila? | `mart_ticket_decision` |
-| Matriz de confusao | O modelo e' confiavel? | `fct_predictions` |
+| Card                      | Pergunta de negocio                     | Fonte                    |
+| ------------------------- | --------------------------------------- | ------------------------ |
+| KPIs                      | Qual o panorama geral do suporte?       | `fct_tickets`          |
+| Violacao por prioridade   | Onde o SLA mais estoura?                | `fct_tickets`          |
+| Violacao por categoria    | Que tipos de chamado sao mais criticos? | `fct_tickets`          |
+| Evolucao mensal           | A situacao esta melhorando ou piorando? | `fct_tickets`          |
+| Violacao por canal        | Algum canal exige mais atencao?         | `fct_tickets`          |
+| Fila priorizada por risco | Quais chamados atacar AGORA?            | `mart_ticket_decision` |
+| Distribuicao de risco     | Qual o tamanho do risco na fila?        | `mart_ticket_decision` |
+| Matriz de confusao        | O modelo e' confiavel?                  | `fct_predictions`      |
 
 ## Filtros
 

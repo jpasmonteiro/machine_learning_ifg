@@ -37,10 +37,7 @@ Os arquivos usados pela pipeline já estão incluídos no repositório da entreg
 - `data/raw/ticket_messages.jsonl`
 - `data/raw/ticket_events.json`
 
-Eles foram gerados uma única vez a partir do script de geração sintética do projeto, com semente
-fixa, e ficam versionados como base de entrada. Ao executar `run_pipeline.py`, a pipeline não gera
-novos dados brutos; ela valida a existência desses três arquivos e segue para processamento,
-modelagem, warehouse, dbt e dashboard.
+Eles ficam versionados como base de entrada da entrega. Ao executar `run_pipeline.py`, a pipeline não gera novos dados brutos; ela valida a existência desses três arquivos e segue para processamento, modelagem, warehouse, dbt e dashboard.
 
 ## Arquivo obrigatório `.env-aws`
 
@@ -183,8 +180,7 @@ python -m src.warehouse.run_dbt
 python -m src.warehouse.export_dashboard
 ```
 
-O script `src.ingestion.generate_data` permanece no projeto apenas para rastreabilidade da origem
-dos dados. Ele não é chamado pela pipeline principal da entrega.
+A pipeline principal da entrega não recria os dados brutos; ela usa exclusivamente os arquivos versionados em `data/raw/`.
 
 Também é possível usar o Makefile:
 

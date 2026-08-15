@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: stg_tickets
+    description: "Chamados tratados e padronizados."
+    columns:
+      - name: ticket_id
+        description: "Identificador unico do chamado."
+        tests: [not_null, unique]
+  - name: stg_predictions
+    description: "Predicoes do modelo de ML para o conjunto de teste."
+    columns:
+      - name: ticket_id
+        tests: [not_null]

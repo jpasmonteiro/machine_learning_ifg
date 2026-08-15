@@ -1,0 +1,196 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Kit de Defesa - Projeto Final</title>
+<style>
+ *{box-sizing:border-box;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+ body{margin:0;background:#eef2f8;color:#243b53;line-height:1.5}
+ .wrap{max-width:920px;margin:0 auto;padding:24px}
+ header{background:#1e2761;color:#fff;border-radius:12px;padding:22px 26px;margin-bottom:16px}
+ header h1{margin:0 0 6px;font-size:22px} header p{margin:0;opacity:.9;font-size:14px}
+ h2{color:#1e2761;border-bottom:2px solid #d6e0ee;padding-bottom:6px;margin-top:26px;font-size:18px}
+ h3{color:#02675a;margin:14px 0 4px;font-size:15px}
+ .card{background:#fff;border:1px solid #dce5f0;border-radius:10px;padding:14px 16px;margin:10px 0}
+ .pitch{background:#1e2761;color:#fff;border-radius:10px;padding:16px 18px;font-size:15px}
+ .q{font-weight:600;color:#1e2761;margin-top:10px}
+ .a{margin:2px 0 8px} .a::before{content:"R: ";color:#02675a;font-weight:700}
+ .pill{display:inline-block;background:#e6f7f4;color:#02675a;border-radius:20px;padding:2px 10px;font-size:12px;margin:2px 4px 2px 0}
+ code{background:#eef2f8;padding:1px 5px;border-radius:4px;font-size:12.5px;color:#0f3d6b}
+ table{width:100%;border-collapse:collapse;font-size:13.5px}
+ th,td{padding:7px 9px;border-bottom:1px solid #eef2f7;text-align:left}
+ th{background:#1e2761;color:#fff} tr:nth-child(even) td{background:#f7f9fc}
+ .warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px}
+</style></head><body><div class="wrap">
+
+<header>
+ <h1>Kit de Defesa &middot; Apresentação do Projeto Final</h1>
+ <p>Como defender cada parte &middot; perguntas prováveis + respostas &middot; colinha por integrante</p>
+</header>
+
+<div class="pitch">
+<b>Resumo em 20 segundos (todos devem saber):</b> Construímos um pipeline de dados em nuvem que prevê
+quais chamados de suporte vão <b>violar o SLA</b>, para o gestor priorizar a fila. Vai da ingestão dos
+dados (estruturados + texto + logs) até um dashboard de decisão, passando por processamento, um
+warehouse com dbt e um modelo de Machine Learning. Roda de ponta a ponta e todos os testes passam.
+</div>
+
+<h2>1. Colinha por integrante (divisão sugerida)</h2>
+<p>Sugestão de divisão pelas 3 disciplinas (podem trocar). <b>Todos</b> devem saber o resumo acima.</p>
+
+<div class="card">
+<h3>João Paulo &rarr; Dados e Pipeline (disciplina do Prof. Otávio)</h3>
+<p><b>O que apresentar:</b> as 3 fontes de dados, a modelagem no warehouse e o pipeline ELT.</p>
+<p><b>Roteiro (fale isto):</b> "Usamos três fontes: uma estruturada (CSV de chamados), uma não
+estruturada (texto do cliente) e uma semiestruturada (logs em JSON). Carregamos no warehouse e o
+<b>dbt</b> organiza em camadas — staging, dimensões e fatos — com <b>10 testes</b> de qualidade. O
+<b>Airflow</b> orquestra tudo numa DAG. Localmente usamos DuckDB, que espelha o Snowflake."</p>
+</div>
+
+<div class="card">
+<h3>Rogério &rarr; Machine Learning (disciplina do Prof. Sirlon)</h3>
+<p><b>O que apresentar:</b> a tarefa, os modelos e as métricas.</p>
+<p><b>Roteiro (fale isto):</b> "A tarefa é classificação binária: prever se o chamado viola o SLA.
+Fizemos um baseline, implementamos o <b>KNN na mão</b> (só NumPy) e depois com <b>scikit-learn</b>
+— as duas ficaram idênticas (concordância de 100% nas predições), o que prova que nossa implementação
+está correta. Comparamos com <b>SVM</b> e <b>MLP</b>; o <b>SVM</b> teve o melhor F1 (0,77) e virou o
+modelo de produção. Cuidamos para não haver vazamento de dados."</p>
+</div>
+
+<div class="card">
+<h3>Pedro Felipe &rarr; Cloud / AWS (disciplina do Prof. Raphael)</h3>
+<p><b>O que apresentar:</b> o uso da AWS, o diagrama e as restrições do Academy.</p>
+<p><b>Roteiro (fale isto):</b> "Usamos o <b>Amazon S3</b> para armazenar os dados em camadas (raw,
+processed, curated), com upload via boto3. A infraestrutura está como código em <b>CloudFormation</b>.
+Como o <b>AWS Academy não deixa criar IAM Roles</b>, usamos o <b>LabRole</b> e o S3, que nem precisa de
+role. A arquitetura completa (MWAA, SageMaker) está no diagrama como proposta de referência."</p>
+</div>
+
+<h2>2. "Por que fizemos assim?" (as perguntas que o professor adora)</h2>
+<div class="card">
+<p class="q">Por que dados sintéticos e não um dataset real?</p>
+<p class="a">Por reprodutibilidade e privacidade: qualquer um roda o pipeline sem depender de conta ou
+download. O esquema espelha o Customer Support Ticket Dataset, e basta trocar os arquivos em
+<code>data/raw</code> para usar dados reais.</p>
+<p class="q">Por que DuckDB no lugar do Snowflake?</p>
+<p class="a">É um espelho local do Snowflake: a <b>mesma modelagem dbt</b> roda nos dois. Assim o projeto
+é reprodutível sem credenciais e, ao conectar o Snowflake (profile já pronto), vira nuvem real.</p>
+<p class="q">Por que prever violação de SLA?</p>
+<p class="a">É uma decisão de negócio clara: o gestor usa o risco previsto para priorizar a fila e
+realocar agentes antes de o prazo estourar. E é um problema desbalanceado (~23% positivos), realista.</p>
+<p class="q">Por que implementar o modelo na mão E com biblioteca?</p>
+<p class="a">É exigência do enunciado (item 4.6). Fazer os dois e mostrar que batem exatamente comprova
+que entendemos o algoritmo por dentro (cálculo de distâncias, escolha dos k vizinhos e votação da
+maioria), não só chamamos uma função pronta.</p>
+<p class="q">Por que o SVM foi o melhor modelo?</p>
+<p class="a">Com o kernel RBF, o SVM acha uma fronteira não linear entre as classes, com a maior margem
+possível. Isso deu o melhor F1 (0,77) e AUC (0,95). O KNN ficou mais fraco porque sofre com o
+desbalanceamento (os vizinhos tendem a ser da classe majoritária).</p>
+<p class="q">Como vocês evitaram vazamento de dados (data leakage)?</p>
+<p class="a">Definimos o ponto de decisão como "logo após a 1ª resposta" e usamos só o que é conhecido
+até ali. Não usamos <code>resolution_minutes</code> nem <code>csat_score</code> como atributos, porque
+são desfechos — usá-los seria trapaça estatística.</p>
+<p class="q">Por que só S3 na AWS e não tudo integrado?</p>
+<p class="a">O enunciado pede usar ≥1 serviço AWS + o diagrama da arquitetura equivalente. Usamos o S3
+de verdade (funciona no Academy sem role) e mantivemos MWAA/SageMaker como proposta no diagrama, que é
+o que o item pede. Foi uma decisão consciente por causa da restrição de IAM do Academy.</p>
+</div>
+
+<h2>3. Perguntas difíceis por professor (com resposta)</h2>
+
+<h3>Prof. Sirlon &mdash; Aprendizagem de Máquina</h3>
+<div class="card">
+<p class="q">O que é o F1-score e por que vocês olham pra ele?</p>
+<p class="a">É a média harmônica entre precisão e recall. Olhamos porque a classe positiva (violar SLA) é
+minoria; acurácia sozinha enganaria (o baseline que chuta "não viola" já acerta 77%).</p>
+<p class="q">Por que priorizar recall?</p>
+<p class="a">Porque um falso negativo (não avisar que um chamado vai estourar) é mais caro para a
+operação do que um alarme falso. Melhor investigar um a mais do que perder um SLA.</p>
+<p class="q">Como o KNN decide a classe de um chamado?</p>
+<p class="a">Calcula a distância euclidiana até todos os exemplos de treino, pega os k mais próximos
+(usamos k=15) e vota na maioria. Não há "treino", é só distância e votação.</p>
+<p class="q">O que é o SVM e o kernel RBF?</p>
+<p class="a">O SVM procura a fronteira que separa as classes com a maior margem; o kernel RBF deixa
+essa fronteira ser não linear, o que deu o melhor resultado aqui.</p>
+<p class="q">O que é o MLP?</p>
+<p class="a">Uma rede neural com camadas ocultas (usamos 64 e 32 neurônios), que aprende por
+backpropagation. Entrou como comparação.</p>
+<p class="q">Como dividiram treino e teste?</p>
+<p class="a">75% treino / 25% teste, de forma estratificada (mantendo a proporção de violações), com
+semente fixa. Padronizamos os atributos usando só o treino, para não vazar informação do teste.</p>
+<p class="q">O modelo está com overfitting?</p>
+<p class="a">As métricas são do conjunto de teste (fora da amostra), nunca do treino. O SVM usa
+regularização (C=1.0) e o resultado ficou consistente entre os modelos, sem sinal de overfitting grave.</p>
+</div>
+
+<h3>Prof. Otávio &mdash; Modelagem de Dados</h3>
+<div class="card">
+<p class="q">O que é ELT e por que não ETL?</p>
+<p class="a">No ELT a gente carrega o dado bruto primeiro e transforma dentro do warehouse (com dbt).
+Aproveita o poder do warehouse e deixa as transformações versionadas e testadas.</p>
+<p class="q">Qual a diferença entre dimensão e fato aqui?</p>
+<p class="a">Fato é o evento medido — <code>fct_tickets</code>, um registro por chamado com as métricas.
+Dimensões são os descritores — <code>dim_categoria</code>, <code>dim_canal</code>, <code>dim_data</code>
+— usados para filtrar e agrupar.</p>
+<p class="q">Que testes de qualidade vocês fizeram no dbt?</p>
+<p class="a">10 testes: <code>not_null</code> e <code>unique</code> em chaves, <code>accepted_values</code>
+em prioridade e no alvo, e <code>relationships</code> ligando predições ao fato de chamados. Todos
+passam.</p>
+<p class="q">O que a DAG do Airflow faz?</p>
+<p class="a">Encadeia as etapas na ordem certa (ingestão → processamento → ML → carga → dbt → export →
+S3) com dependências e agendamento diário. O <code>run_pipeline.py</code> faz a mesma sequência sem
+precisar do Airflow.</p>
+<p class="q">Como garantem rastreabilidade do dado?</p>
+<p class="a">O dado percorre camadas nomeadas (raw → processed → marts → predictions) e o dbt documenta a
+linhagem entre os modelos, então dá para seguir do bruto até a predição.</p>
+</div>
+
+<h3>Prof. Raphael &mdash; Cloud Computing</h3>
+<div class="card">
+<p class="q">Qual serviço da AWS vocês usam de fato?</p>
+<p class="a">O Amazon S3, como data lake em três camadas. O upload é feito por <code>src/cloud/s3_sync.py</code>
+(boto3) e validamos a lógica com um S3 simulado (moto).</p>
+<p class="q">Por que o template original não roda no Academy?</p>
+<p class="a">Porque ele cria uma IAM Role, e o Academy bloqueia <code>iam:CreateRole</code>. Por isso fizemos
+uma variante (<code>cloudformation-academy.yaml</code>) que reutiliza o LabRole em vez de criar um.</p>
+<p class="q">O que é infraestrutura como código?</p>
+<p class="a">Descrever os recursos (buckets, logs, funções) num arquivo declarativo — nosso template
+CloudFormation em YAML — para provisionar tudo de forma reproduzível, sem clicar no console.</p>
+<p class="q">Quais os custos e como reduzir?</p>
+<p class="a">Em produção pequena, ~US$ 450-600/mês, sendo o MWAA o maior item. Versão enxuta (Airflow em
+EC2, sem SageMaker gerenciado) cai para ~US$ 70-120/mês. No trabalho, S3 dentro do nível gratuito (~US$ 0).</p>
+<p class="q">Como escalaria isso para produção real?</p>
+<p class="a">Subindo a DAG no Amazon MWAA, treinando/servindo o modelo no SageMaker e mantendo o
+Snowflake como warehouse — exatamente a arquitetura do nosso diagrama.</p>
+</div>
+
+<h2>4. Números para decorar (cola rápida)</h2>
+<table>
+ <tr><th>Item</th><th>Valor</th></tr>
+ <tr><td>Chamados no dataset</td><td>8.000 (~12 meses)</td></tr>
+ <tr><td>Taxa de violação de SLA (alvo positivo)</td><td>22,8%</td></tr>
+ <tr><td>SLA por prioridade</td><td>Crítica 4h &middot; Alta 8h &middot; Média 24h &middot; Baixa 48h</td></tr>
+ <tr><td>Treino / Teste / Atributos</td><td>6.000 / 2.000 / ~25 (49 após one-hot)</td></tr>
+ <tr><td>KNN na mão = scikit-learn</td><td>F1 0,54 &middot; AUC 0,88 &middot; concordância = 100%</td></tr>
+ <tr><td>SVM (produção)</td><td>Acc 0,90 &middot; Prec 0,85 &middot; Recall 0,69 &middot; F1 0,77 &middot; AUC 0,95</td></tr>
+ <tr><td>MLP</td><td>Acc 0,89 &middot; Recall 0,77 &middot; F1 0,76 &middot; AUC 0,94</td></tr>
+ <tr><td>Matriz de confusão (teste, SVM)</td><td>VN 1490 &middot; FP 54 &middot; FN 140 &middot; VP 316</td></tr>
+ <tr><td>dbt</td><td>12 modelos &middot; 10 testes &middot; PASS=22</td></tr>
+</table>
+
+<h2>5. Se travar numa pergunta (respostas de emergência)</h2>
+<div class="warn">
+<p><b>Não sabe responder na hora?</b> Use com naturalidade:</p>
+<ul>
+ <li>"Essa parte quem detalha melhor é o(a) [colega da disciplina], mas a ideia geral é…"</li>
+ <li>"Posso te mostrar no código: está em <code>src/…</code> — a gente implementou assim porque…"</li>
+ <li>"Não testamos esse caso específico, mas o desenho suporta porque…"</li>
+</ul>
+<p><b>Demo ao vivo (impressiona e tira o foco de perguntas teóricas):</b> rode
+<code>python run_pipeline.py</code> — em ~6 s ele executa tudo e mostra os testes do dbt passando
+(PASS=22) e as métricas. É a melhor prova de que o projeto funciona.</p>
+</div>
+
+<p style="color:#5b6770;font-size:13px;margin-top:18px">Dica final: cada um domina a SUA disciplina a
+fundo e sabe o resumo das outras. Com isso, as perguntas do professor deixam de ser ameaça e viram
+oportunidade de mostrar que vocês entenderam o que construíram.</p>
+
+</div></body></html>

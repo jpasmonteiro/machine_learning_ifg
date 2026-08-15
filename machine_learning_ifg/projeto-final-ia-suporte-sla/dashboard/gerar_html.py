@@ -1,0 +1,75 @@
+# -*- coding: utf-8 -*-
+"""Gera o mockup HTML navegavel do dashboard a partir do JSON dos marts."""
+import sys, pathlib, json
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from config.settings import CURATED_DIR
+
+data = json.load(open(CURATED_DIR / "dashboard" / "dashboard_data.json", encoding="utf-8"))
+js = json.dumps(data, ensure_ascii=False)
+
+HTML = r"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Suporte - Apoio à Decisão</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--azul:#1f5fa8;--azul2:#4a90d9;--bg:#f0f3f8;--card:#fff;--txt:#243b53;--cinza:#5b6770;--verm:#c0392b;--verde:#27ae60;--laranja:#e67e22}
+  *{box-sizing:border-box;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--txt)}
+  header{background:var(--azul);color:#fff;padding:16px 24px}
+  header h1{margin:0;font-size:18px} header p{margin:4px 0 0;font-size:13px;opacity:.9}
+  .wrap{padding:18px 24px;max-width:1200px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid #dce5f0;border-radius:10px;padding:14px;text-align:center}
+  .kpi .v{font-size:26px;font-weight:700;color:var(--azul)} .kpi .l{font-size:12px;color:var(--cinza);margin-top:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .panel{background:var(--card);border:1px solid #dce5f0;border-radius:10px;padding:14px}
+  .panel h3{margin:0 0 10px;font-size:13.5px;color:var(--txt)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:6px 8px;border-bottom:1px solid #eef2f7;text-align:left}
+  th{color:var(--cinza);font-weight:600}
+  .badge{padding:2px 8px;border-radius:10px;color:#fff;font-size:11px}
+  .full{grid-column:1/3}
+  .note{font-size:12px;color:var(--cinza);margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Suporte Técnico &middot; Painel de Apoio à Decisão</h1>
+  <p>Previsão de violação de SLA &middot; mockup do dashboard Metabase (dados do warehouse)</p>
+</header>
+<div class="wrap">
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="panel"><h3>Taxa de violação de SLA por prioridade (%)</h3><canvas id="cPri" height="150"></canvas></div>
+    <div class="panel"><h3>Taxa de violação por categoria (%)</h3><canvas id="cCat" height="150"></canvas></div>
+    <div class="panel"><h3>Evolução mensal da violação de SLA (%)</h3><canvas id="cMes" height="150"></canvas></div>
+    <div class="panel"><h3>Fila por faixa de risco previsto</h3><canvas id="cRisco" height="150"></canvas></div>
+    <div class="panel full"><h3>Fila priorizada por risco (Top 12 chamados a atacar agora)</h3><div id="tabela"></div>
+      <div class="note">Card que apoia diretamente a decisão: o gestor realoca agentes para estes chamados antes de o SLA estourar.</div></div>
+  </div>
+</div>
+<script>
+const D = __DATA__;
+const fmt = n => Number(n).toLocaleString('pt-BR');
+const kpis=[['Chamados',fmt(D.kpis.total_chamados)],['Violação de SLA',D.kpis.taxa_violacao_pct+'%'],
+['Tempo médio resolução',(D.kpis.tempo_medio_resolucao_min/60).toFixed(1)+' h'],['CSAT médio',D.kpis.csat_medio+' / 5']];
+document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="kpi"><div class="v">${k[1]}</div><div class="l">${k[0]}</div></div>`).join('');
+const AZ='#1f5fa8',AZ2='#4a90d9',VM='#c0392b';
+new Chart(cPri,{type:'bar',data:{labels:D.por_prioridade.map(r=>r.priority),datasets:[{data:D.por_prioridade.map(r=>r.taxa_violacao_pct),backgroundColor:AZ}]},options:{plugins:{legend:{display:false}}}});
+new Chart(cCat,{type:'bar',data:{labels:D.por_categoria.map(r=>r.category),datasets:[{data:D.por_categoria.map(r=>r.taxa_violacao_pct),backgroundColor:AZ2}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+new Chart(cMes,{type:'line',data:{labels:D.por_mes.map(r=>r.mes),datasets:[{data:D.por_mes.map(r=>r.taxa_violacao_pct),borderColor:VM,backgroundColor:VM,tension:.3}]},options:{plugins:{legend:{display:false}}}});
+const cor={Alto:'#c0392b','Médio':'#e67e22',Baixo:'#27ae60'};
+new Chart(cRisco,{type:'bar',data:{labels:D.distribuicao_risco.map(r=>r.faixa_risco),datasets:[{data:D.distribuicao_risco.map(r=>r.chamados),backgroundColor:D.distribuicao_risco.map(r=>cor[r.faixa_risco]||'#5b6770')}]},options:{plugins:{legend:{display:false}}}});
+let h='<table><tr><th>Chamado</th><th>Prioridade</th><th>Categoria</th><th>Produto</th><th>Tier</th><th>Prob. violação</th></tr>';
+D.top_risco.forEach(r=>{h+=`<tr><td>${r.ticket_id}</td><td>${r.priority}</td><td>${r.category}</td><td>${r.product}</td><td>${r.customer_tier}</td><td><span class="badge" style="background:#c0392b">${(r.prob_violacao*100).toFixed(0)}%</span></td></tr>`});
+document.getElementById('tabela').innerHTML=h+'</table>';
+</script>
+</body>
+</html>
+"""
+HTML = HTML.replace("__DATA__", js)
+open(pathlib.Path(__file__).resolve().parent / "mockup.html", "w", encoding="utf-8").write(HTML)
+print("mockup.html (acentuado) gerado")

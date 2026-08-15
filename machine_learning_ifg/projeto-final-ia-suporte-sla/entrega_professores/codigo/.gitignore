@@ -1,0 +1,7 @@
+.env-aws
+.venv/
+__pycache__/
+*.pyc
+dbt/target/
+dbt/logs/
+

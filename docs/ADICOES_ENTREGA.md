@@ -8,7 +8,7 @@ pipeline, sem passo manual.
 |---|---|---|
 | 4.4 — "DAG funcional no Airflow" | DAG existia, mas nunca executada; sem ambiente para rodá-la | Airflow em container, DAG **9/9 tasks SUCCESS**, evidência em `evidencias/airflow_dag_run.log` |
 | 4.7 — "dashboard no Metabase" | HTML estático; Metabase só como sugestão em SQL | Metabase provisionado por script, 10 cards, prints em `evidencias/metabase_dashboard*.png` |
-| 4.7 — "pelo menos um filtro ou recorte analítico" | Nenhum filtro | 3 filtros (Prioridade, Categoria, Canal) no Metabase **e** no painel HTML |
+| 4.7 — "pelo menos um filtro ou recorte analítico" | Nenhum filtro | 3 filtros (Prioridade, Categoria, Canal) no painel do Metabase |
 
 ---
 
@@ -32,7 +32,7 @@ Comandos auxiliares:
 
 ```bash
 make stack-up      # sobe Postgres + Metabase + Airflow
-make bi            # publica no Postgres e provisiona o painel do Metabase
+make bi            # publica no Postgres, provisiona o painel e captura os prints
 make airflow-run   # executa a DAG e grava a evidência
 make stack-reset   # apaga tudo e recria do zero (prova de reprodutibilidade)
 make stack-down    # para os containers, preservando os dados
@@ -143,7 +143,7 @@ container. Sem isso, o painel se perderia a cada `docker compose down`.
 
 ## 4. O filtro
 
-Três filtros — **Prioridade, Categoria e Canal** — presentes nos dois painéis.
+Três filtros — **Prioridade, Categoria e Canal** — no painel do Metabase.
 
 ### No Metabase
 
@@ -159,26 +159,14 @@ where 1=1
 
 Sem valor selecionado o trecho some da query; com valor, vira `and priority = ...`.
 
-### No painel HTML
-
-`dashboard/mockup.html` deixou de ser um print estático. O `export_dashboard.py`
-passou a exportar um **cubo** com as somas pré-agregadas no grão
-(prioridade, categoria, canal, mês) — 1.528 linhas. Com as *somas*, e não as médias,
-o navegador recalcula todos os indicadores sob qualquer combinação de filtros, sem
-carregar os 8.000 chamados linha a linha.
-
-O Chart.js foi versionado em `dashboard/vendor/`, então o painel **abre sem
-internet** — importante para a apresentação.
-
 ### Validação cruzada
 
 O mesmo recorte foi conferido por três caminhos independentes:
 
-| Recorte | Metabase (Postgres) | Painel HTML (cubo) | SQL direto (DuckDB) |
-|---|---|---|---|
-| Sem filtro | 8.000 / 22,8% | 8.000 / 22,8% | 8.000 / 22,8% |
-| Prioridade = Crítica | 654 / 60,4% | 654 / 60,4% | 654 / 60,4% |
-| Crítica + Bug / Defeito | — | 79 / 100% / 13,7h / CSAT 2,83 | 79 / 100% / 13,7h / CSAT 2,83 |
+| Recorte | Metabase (Postgres) | SQL direto (DuckDB) |
+|---|---|---|
+| Sem filtro | 8.000 / 22,8% | 8.000 / 22,8% |
+| Prioridade = Crítica | 654 / 60,4% | 654 / 60,4% |
 
 A demonstração por prioridade está registrada em `evidencias/metabase_dashboard.log`,
 feita pelo endpoint do dashboard — ou seja, passando pelos `parameter_mappings` do
@@ -197,11 +185,10 @@ painel, e não por um parâmetro solto no SQL.
 | `infra/postgres-init/01-bancos-auxiliares.sql` | cria `metabase_app` e `airflow` |
 | `src/bi/publish_bi.py` | republica a modelagem no Postgres |
 | `src/bi/metabase_setup.py` | provisiona o painel pela API |
+| `src/bi/capturar_prints.py` | captura os prints do painel para evidências |
 | `src/bi/stack.py` | sobe/confere os containers; pula com aviso sem Docker |
 | `src/orchestration/run_dag.py` | dispara a DAG e gera a evidência |
-| `src/warehouse/gerar_mockup.py` | gera o painel HTML com filtros |
 | `src/cloud/provision_and_upload.py` | provisiona o bucket e envia, no mesmo processo |
-| `dashboard/vendor/chart.umd.min.js` | Chart.js local (painel sem internet) |
 
 ### Alterados
 
@@ -213,8 +200,7 @@ painel, e não por um parâmetro solto no SQL.
 | `dbt/models/staging/stg_predictions.sql` | `double` → `double precision` (portabilidade) |
 | `src/warehouse/load_warehouse.py` | `load_postgres()` |
 | `src/warehouse/run_dbt.py` | mapa `WAREHOUSE_TARGET` → target do dbt |
-| `src/warehouse/export_dashboard.py` | exporta o cubo e regenera o painel HTML |
-| `dashboard/mockup.html` | gerado por script, com filtros funcionais |
+| `src/warehouse/export_dashboard.py` | inclui `channel` na fila priorizada |
 | `Makefile` | alvos `stack-*`, `bi`, `airflow-run` |
 | `requirements.txt` | `dbt-postgres`, `SQLAlchemy`, `psycopg2-binary` |
 
@@ -226,7 +212,6 @@ painel, e não por um parâmetro solto no SQL.
 | `evidencias/metabase_dashboard.log` | 10 cards executados + demonstração do filtro |
 | `evidencias/metabase_dashboard.png` | painel no Metabase, sem filtro |
 | `evidencias/metabase_dashboard_filtro.png` | mesmo painel com Prioridade = Crítica |
-| `evidencias/dashboard_mockup.png` | painel HTML com a barra de filtros |
 
 ---
 

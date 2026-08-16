@@ -73,38 +73,12 @@ def run():
         from {A}.fct_predictions group by 1,2 order by 1,2
     """).to_dict(orient="records")
 
-    # channel entra aqui para a tabela responder tambem ao filtro de canal.
     top_risco = q(con, f"""
         select ticket_id, priority, category, channel, product, customer_tier,
                round(proba_breach,3) as prob_violacao
         from {A}.mart_ticket_decision
         where faixa_risco = 'Alto'
-        order by proba_breach desc limit 60
-    """).to_dict(orient="records")
-
-    # CUBO: agregados pre-somados no grao (prioridade, categoria, canal, mes).
-    # Com as SOMAS — e nao as medias — o dashboard estatico consegue recalcular
-    # todos os indicadores sob qualquer combinacao de filtros, sem precisar
-    # carregar os 8.000 chamados linha a linha no navegador.
-    cubo = q(con, f"""
-        select priority, category, channel, created_month as mes,
-               count(*)                          as chamados,
-               sum(sla_breach)                   as violacoes,
-               sum(resolution_minutes)           as soma_resolucao_min,
-               sum(first_response_minutes)       as soma_1a_resposta_min,
-               sum(reopened)                     as reaberturas,
-               sum(coalesce(csat_score, 0))      as soma_csat,
-               sum(case when csat_score is null then 0 else 1 end) as n_csat
-        from {A}.fct_tickets
-        group by 1, 2, 3, 4
-    """).to_dict(orient="records")
-
-    # Mesmo raciocinio para a fila por faixa de risco (conjunto de teste).
-    cubo_risco = q(con, f"""
-        select priority, category, channel, faixa_risco, count(*) as chamados
-        from {A}.mart_ticket_decision
-        where faixa_risco <> 'Sem score'
-        group by 1, 2, 3, 4
+        order by proba_breach desc limit 12
     """).to_dict(orient="records")
     con.close()
 
@@ -114,7 +88,6 @@ def run():
         "kpis": kpis, "por_categoria": by_cat, "por_prioridade": by_pri,
         "por_canal": by_channel, "por_mes": by_month, "distribuicao_risco": risco,
         "matriz_confusao": cm, "top_risco": top_risco,
-        "cubo": cubo, "cubo_risco": cubo_risco,
         "metricas_modelo": metrics["metricas"], "modelo_producao": metrics["modelo_producao"],
     }
     out_dir = CURATED_DIR / "dashboard"
@@ -123,11 +96,6 @@ def run():
         json.dump(data, f, ensure_ascii=False, indent=2, default=str)
     print(f"[dashboard] dados exportados -> {out_dir/'dashboard_data.json'}")
     print(f"[dashboard] KPIs: {kpis}")
-
-    # Regenera o painel HTML na sequencia, para ele nunca ficar dessincronizado
-    # dos dados recem-exportados.
-    from src.warehouse import gerar_mockup
-    gerar_mockup.run()
     return data
 
 

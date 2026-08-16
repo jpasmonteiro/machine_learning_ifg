@@ -3,7 +3,7 @@ PIP := .venv/bin/pip
 COMPOSE := docker compose -f infra/docker-compose.yml
 
 .PHONY: help env venv install run destroy validate-raw process ml load dbt dashboard clean \
-        stack-up stack-down stack-reset stack-ps publish-bi metabase bi airflow-run airflow-logs
+        stack-up stack-down stack-reset stack-ps publish-bi metabase prints bi airflow-run airflow-logs
 
 help:
 	@echo "Comandos principais:"
@@ -70,7 +70,10 @@ publish-bi:
 metabase:
 	$(PYTHON) -m src.bi.metabase_setup
 
-bi: publish-bi metabase
+prints:
+	$(PYTHON) -m src.bi.capturar_prints
+
+bi: publish-bi metabase prints
 
 # -------------------------------------------------------------------- orquestracao
 # `dags test` executa a DAG inteira em primeiro plano, sem depender do scheduler:

@@ -24,7 +24,6 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 - Apresentação: [apresentacao/Apresentacao_Projeto_Final.pdf](apresentacao/Apresentacao_Projeto_Final.pdf)
 - Código executável e dados de entrada na raiz do repositório
 - Dashboard no Metabase: provisionado por `make run`, em http://localhost:3000
-- Dashboard offline (plano B, sem Docker/internet): [dashboard/mockup.html](dashboard/mockup.html)
 - Detalhamento das últimas adições: [docs/ADICOES_ENTREGA.md](docs/ADICOES_ENTREGA.md)
 
 ## Estrutura principal
@@ -43,13 +42,13 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 ├── src/
 │   ├── processing/                   # limpeza e extração de atributos
 │   ├── ml/                           # KNN hard-code, sklearn, SVM e MLP
-│   ├── warehouse/                    # carga, dbt e geração do painel offline
+│   ├── warehouse/                    # carga no warehouse, dbt e export de dados
 │   ├── bi/                           # Postgres, Metabase e controle dos containers
 │   ├── orchestration/                # disparo da DAG e evidência
 │   └── cloud/                        # CloudFormation e S3
 ├── config/                           # configurações do projeto
 ├── dbt/                              # modelos e testes dbt (duckdb/postgres/snowflake)
-├── dashboard/                        # painel offline, vendor e consultas Metabase
+├── dashboard/                        # guia e consultas SQL do Metabase
 ├── infra/                            # CloudFormation, docker-compose, custos e diagrama
 ├── docs/                             # dicionário de dados e adições da entrega
 ├── evidencias/                       # métricas, gráficos, DAG e prints do Metabase
@@ -192,9 +191,9 @@ A execução faz:
 6. Treina e avalia os modelos.
 7. Carrega o warehouse DuckDB.
 8. Executa os modelos e testes dbt.
-9. Exporta dados para o dashboard e regenera o painel HTML.
+9. Exporta os agregados do dashboard.
 10. Sobe os containers e republica a camada analítica no Postgres.
-11. Provisiona o dashboard no Metabase (10 cards + 3 filtros).
+11. Provisiona o dashboard no Metabase (10 cards + 3 filtros) e captura os prints.
 12. Envia as camadas `raw`, `processed` e `curated` para o S3.
 
 Ao final, os recursos AWS permanecem ativos para validação no console. Para remover tudo depois da validação:
@@ -223,11 +222,9 @@ Após `make run`, os principais artefatos ficam em:
 data/processed/
 data/curated/warehouse.duckdb
 data/curated/dashboard/dashboard_data.json
-dashboard/mockup.html                        # painel offline, com filtros
 evidencias/metrics.json
 evidencias/matriz_confusao.png
 evidencias/curva_roc.png
-evidencias/dashboard_mockup.png              # painel offline
 evidencias/metabase_dashboard.png            # painel no Metabase
 evidencias/metabase_dashboard_filtro.png     # o mesmo, com filtro aplicado
 evidencias/metabase_dashboard.log            # cards executados + prova do filtro
@@ -277,13 +274,6 @@ Para rodar só a parte de BI: `make stack-up && make bi`.
 
 Guia detalhado em [dashboard/README_metabase.md](dashboard/README_metabase.md);
 as consultas dos cards estão em [dashboard/metabase_queries.sql](dashboard/metabase_queries.sql).
-
-### Dashboard offline (plano B)
-
-[dashboard/mockup.html](dashboard/mockup.html) abre com duplo clique, **sem Docker
-e sem internet**, com os mesmos três filtros funcionando. É gerado a cada execução
-a partir de `data/curated/dashboard/dashboard_data.json`, então nunca fica
-dessincronizado dos dados.
 
 ### Orquestração no Airflow
 

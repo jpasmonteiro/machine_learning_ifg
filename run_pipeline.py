@@ -83,11 +83,17 @@ def publish_bi_step():
 
 
 def metabase_step():
-    """Cria/atualiza o painel 'Suporte - Apoio a Decisao' com os 3 filtros."""
-    from src.bi import stack, metabase_setup
+    """Cria/atualiza o painel 'Suporte - Apoio a Decisao' com os 3 filtros.
+
+    Na sequencia captura os prints do painel para evidencias/, para a entrega
+    ficar completa sem nenhum passo manual.
+    """
+    from src.bi import stack, metabase_setup, capturar_prints
     if not stack.garantir_stack():
         return {"pulado": True}
-    return metabase_setup.run()
+    resultado = metabase_setup.run()
+    capturar_prints.run()
+    return resultado
 
 
 def s3_upload_step():

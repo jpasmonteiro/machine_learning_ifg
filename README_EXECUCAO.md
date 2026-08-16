@@ -17,7 +17,7 @@ priorização da fila e na realocação de agentes antes do prazo estourar.
 - DAG do Airflow para orquestração.
 - Provisionamento obrigatório de bucket Amazon S3 via CloudFormation.
 - Sincronização obrigatória das camadas `raw`, `processed` e `curated` para o Amazon S3.
-- Dashboard Metabase por consultas SQL e mockup HTML.
+- Dashboard no Metabase com 10 cards e filtros, provisionado por script.
 
 ## Requisitos
 
@@ -164,11 +164,11 @@ Após a execução, ficam disponíveis:
 - `data/raw/`: dados brutos de entrada, já incluídos na entrega.
 - `data/processed/`: features e predições.
 - `data/curated/warehouse.duckdb`: warehouse local.
-- `data/curated/dashboard/dashboard_data.json`: dados para o mockup.
+- `data/curated/dashboard/dashboard_data.json`: agregados exportados do warehouse.
 - `evidencias/metrics.json`: métricas dos modelos.
 - `evidencias/matriz_confusao.png`: matriz de confusão do modelo final.
 - `evidencias/curva_roc.png`: curva ROC comparativa.
-- `evidencias/dashboard_mockup.png`: imagem do dashboard.
+- `evidencias/metabase_dashboard.png` e `_filtro.png`: prints do painel no Metabase.
 
 ## Execução por etapa
 
@@ -191,13 +191,13 @@ make run
 
 ## Dashboard
 
-Para uma prévia rápida, abra:
+O painel é provisionado automaticamente pelo `make run`. Acesse:
 
 ```text
-dashboard/mockup.html
+http://localhost:3000     (admin@suporte.local / Suporte@2026)
 ```
 
-Para montar no Metabase, use as consultas em:
+As consultas de cada card estão versionadas em:
 
 ```text
 dashboard/metabase_queries.sql

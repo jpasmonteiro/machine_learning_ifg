@@ -35,13 +35,6 @@ make bi         # publica no Postgres e provisiona o painel
 As consultas de cada card estao versionadas em `metabase_queries.sql` (referencia
 para leitura; quem cria os cards de fato e' o script).
 
-## Painel offline
-
-`mockup.html` e' a versao offline do painel: abre com duplo clique, sem Docker e
-sem internet, com os **mesmos filtros** funcionando. Serve de plano B na
-apresentacao. E' gerado por `src/warehouse/gerar_mockup.py` a cada execucao do
-pipeline, entao nunca fica dessincronizado dos dados.
-
 ## Cards do dashboard
 
 | Card                            | Pergunta de negocio                     | Fonte                  |
@@ -80,7 +73,6 @@ Efeito medido no card "Taxa de violacao de SLA" (registro completo em
 - `../evidencias/metabase_dashboard_filtro.png` - o mesmo com Prioridade = Critica;
 - `../evidencias/metabase_dashboard.log` - os 10 cards executados e a demonstracao
   do filtro;
-- `../evidencias/dashboard_mockup.png` - o painel offline, com a barra de filtros.
 
 ## Como o dashboard apoia a decisao
 

@@ -33,7 +33,38 @@ RE_SAIDA = re.compile(r"INFO - (\[(?:ingestao|processing|warehouse|dashboard|bi|
 RE_DBT = re.compile(r"INFO - .*?(Done\. PASS=\d+.*)")
 
 
+def _compose(*args, timeout=300):
+    return subprocess.run(["docker", "compose", "-f", str(COMPOSE), *args],
+                          cwd=str(ROOT), capture_output=True, text=True, timeout=timeout)
+
+
+def _esperar_airflow(espera=180):
+    """Garante os containers no ar E o metadata DB ja' migrado.
+
+    No primeiro boot o Airflow leva algumas dezenas de segundos criando as ~48
+    tabelas do proprio banco. Um `docker compose exec` disparado nessa janela
+    falha com "You need to initialize the database", mesmo com o container de pe'.
+    `db check-migrations` bloqueia ate' as migracoes terminarem — e' a espera
+    correta, em vez de dormir um tempo fixo e torcer.
+    """
+    from src.bi import stack
+    if not stack.garantir_stack():
+        raise SystemExit("[dag] nao foi possivel subir a stack. Rode: make stack-up")
+
+    print("[dag] aguardando o metadata DB do Airflow...", end="", flush=True)
+    r = _compose("exec", "-T", "airflow", "airflow", "db", "check-migrations",
+                 "-t", str(espera), timeout=espera + 60)
+    if r.returncode != 0:
+        print()
+        raise SystemExit(
+            "[dag] o banco do Airflow nao ficou pronto em "
+            f"{espera}s.\n{(r.stderr or r.stdout).strip()[-400:]}\n"
+            "[dag] Veja o que aconteceu com: docker logs suporte-airflow")
+    print(" pronto")
+
+
 def _executar(data_execucao):
+    _esperar_airflow()
     cmd = ["docker", "compose", "-f", str(COMPOSE), "exec", "-T", "airflow",
            "airflow", "dags", "test", DAG_ID, data_execucao]
     print(f"[dag] {' '.join(cmd[-4:])}")
@@ -67,7 +98,7 @@ def run(data_execucao=None):
         "Airflow....: 2.10.5  |  operador: BashOperator (isolamento por processo)",
         f"Executado..: {time.strftime('%Y-%m-%d %H:%M')}",
         f"Comando....: airflow dags test {DAG_ID} {data_execucao}",
-        "Interface..: http://localhost:8081  (usuario airflow / senha airflow)",
+        "Interface..: http://localhost:8081  (usuario admin / senha admin)",
         "Ambiente...: container suporte-airflow (infra/docker-compose.yml)",
         "",
         "RESULTADO POR TASK (ordem de dependencia)",

@@ -1,0 +1,46 @@
+EVIDENCIA DE EXECUCAO - DASHBOARD NO METABASE
+==================================================================
+Painel....: Suporte - Apoio a Decisao
+URL.......: http://metabase:3000/dashboard/2
+Metabase..: v0.63.10
+Fonte.....: Postgres, schema analytics (modelos dbt)
+Gerado....: 2026-08-16 19:18
+Provisionado por: src/bi/metabase_setup.py
+
+FILTROS DO PAINEL: Prioridade, Categoria, Canal
+
+CARDS E RESULTADO (sem filtro aplicado)
+------------------------------------------------------------------
+  Chamados no período                              1 linha(s)  [3 filtros]
+      1a linha: 8000
+  Taxa de violação de SLA (%)                      1 linha(s)  [3 filtros]
+      1a linha: 22.8
+  Tempo médio de resolução (h)                     1 linha(s)  [3 filtros]
+      1a linha: 14.2
+  Violação de SLA por prioridade                   4 linha(s)  [3 filtros]
+      1a linha: Crítica | 60.4
+  Violação de SLA por categoria                    7 linha(s)  [3 filtros]
+      1a linha: Solicitação de Recurso | 68.5
+  Evolução mensal da violação de SLA              12 linha(s)  [3 filtros]
+      1a linha: 1 | 23.4
+  Violação de SLA por canal                        5 linha(s)  [3 filtros]
+      1a linha: Redes Sociais | 798 | 29.8
+  Fila priorizada por risco previsto              50 linha(s)  [3 filtros]
+      1a linha: TCK-006472 | Alta | Solicitação de Recurso | Relatórios | Basic | 1.0 | Alto
+  Distribuição da fila por faixa de risco          3 linha(s)  [3 filtros]
+      1a linha: Baixo | 710
+  Matriz de confusão do modelo                     4 linha(s)  [0 filtros]
+      1a linha: Não violou (real) | Não violou (previsto) | 1490
+
+DEMONSTRACAO DO FILTRO (card 'Taxa de violacao de SLA')
+Consultas feitas pelo endpoint do dashboard, passando pelo filtro.
+------------------------------------------------------------------
+  sem filtro................: 22.8 %
+  Prioridade = Crítica   : 60.4 %
+  Prioridade = Alta      : 47.3 %
+  Prioridade = Média     : 15.6 %
+  Prioridade = Baixa     : 4.8 %
+
+A taxa global e' a media do periodo e cresce monotonicamente com a
+prioridade, como esperado pela regra de SLA do projeto: prazos mais
+curtos nas prioridades altas produzem mais violacoes.

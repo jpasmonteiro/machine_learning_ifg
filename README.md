@@ -26,6 +26,78 @@ A variável-alvo é `sla_breach`, que indica se o chamado violou ou não o SLA d
 - Dashboard no Metabase: provisionado por `make run`, em http://localhost:3000
 - Detalhamento das últimas adições: [docs/ADICOES_ENTREGA.md](docs/ADICOES_ENTREGA.md)
 
+---
+
+## Início rápido
+
+### Pré-requisitos
+
+- **Python 3.10+** e **Docker Desktop aberto** (o Docker sobe o Postgres, o Metabase e o Airflow).
+- Credenciais AWS no arquivo `.env-aws` (veja o passo 1).
+
+### Passo 1 — credenciais AWS
+
+```bash
+make env
+```
+
+Cria o `.env-aws` a partir do modelo. **Abra o arquivo e preencha** com as credenciais
+da AWS (no AWS Academy: *AWS Details → AWS CLI*). Sem isso o pipeline para no início.
+
+### Passo 2 — rodar o pipeline completo
+
+```bash
+make run
+```
+
+Um comando só: cria a `.venv`, instala as dependências, sobe os containers, executa
+ingestão → atributos → ML → dbt → Postgres → Metabase → S3.
+
+> A **primeira** execução leva de 8 a 12 minutos, porque baixa as dependências e
+> constrói a imagem do Airflow. As seguintes levam cerca de 100 segundos.
+
+### Passo 3 — executar a DAG do Airflow
+
+```bash
+make airflow-run
+```
+
+Roda a DAG de ponta a ponta e grava o resultado em `evidencias/airflow_dag_run.log`.
+
+### Acessos
+
+| Serviço      | Endereço                | Usuário                | Senha          |
+| ------------ | ----------------------- | ---------------------- | -------------- |
+| **Metabase** | http://localhost:3000   | `admin@suporte.local`  | `Suporte@2026` |
+| **Airflow**  | http://localhost:8081   | `admin`                | `admin`        |
+| Postgres     | `localhost:5433`        | `suporte`              | `suporte`      |
+
+No Metabase, o painel é **"Suporte - Apoio a Decisao"**, com os filtros de
+prioridade, categoria e canal no topo. No Airflow, a DAG é **`pipeline_suporte_tecnico`**.
+
+> São credenciais de desenvolvimento local, versionadas de propósito para facilitar
+> a avaliação. Não servem a nenhum ambiente real.
+
+### Comandos úteis
+
+```bash
+make help          # lista todos os comandos
+make stack-up      # sobe Postgres + Metabase + Airflow
+make stack-down    # para os containers, preservando os dados
+make stack-reset   # apaga containers e volumes e recria do zero
+make destroy       # esvazia o bucket S3 e remove a stack CloudFormation
+make clean         # remove artefatos locais, mantendo data/raw
+```
+
+### Se não tiver Docker
+
+O pipeline **não quebra**: as etapas de Postgres e Metabase são puladas com aviso e
+o restante (ingestão, ML, dbt, S3) roda normalmente. Nesse caso, o dashboard pode ser
+conferido pelos prints em `evidencias/metabase_dashboard.png` e
+`evidencias/metabase_dashboard_filtro.png`.
+
+---
+
 ## Estrutura principal
 
 ```text
@@ -193,7 +265,7 @@ A execução faz:
 8. Executa os modelos e testes dbt.
 9. Exporta os agregados do dashboard.
 10. Sobe os containers e republica a camada analítica no Postgres.
-11. Provisiona o dashboard no Metabase (10 cards + 3 filtros) e captura os prints.
+11. Provisiona o dashboard no Metabase (10 cards + 3 filtros).
 12. Envia as camadas `raw`, `processed` e `curated` para o S3.
 
 Ao final, os recursos AWS permanecem ativos para validação no console. Para remover tudo depois da validação:
@@ -201,6 +273,17 @@ Ao final, os recursos AWS permanecem ativos para validação no console. Para re
 ```bash
 make destroy
 ```
+
+### 4. Executar a DAG do Airflow
+
+```bash
+make airflow-run
+```
+
+Sobe a stack, aguarda o banco de metadados do Airflow e executa a DAG
+`pipeline_suporte_tecnico` de ponta a ponta, gravando o resultado por task em
+`evidencias/airflow_dag_run.log`. A interface fica em http://localhost:8081
+(`admin` / `admin`).
 
 O `make destroy` esvazia o bucket S3 e remove a stack CloudFormation.
 

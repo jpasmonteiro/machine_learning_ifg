@@ -32,7 +32,7 @@ Comandos auxiliares:
 
 ```bash
 make stack-up      # sobe Postgres + Metabase + Airflow
-make bi            # publica no Postgres, provisiona o painel e captura os prints
+make bi            # publica no Postgres e provisiona o painel do Metabase
 make airflow-run   # executa a DAG e grava a evidência
 make stack-reset   # apaga tudo e recria do zero (prova de reprodutibilidade)
 make stack-down    # para os containers, preservando os dados
@@ -185,7 +185,6 @@ painel, e não por um parâmetro solto no SQL.
 | `infra/postgres-init/01-bancos-auxiliares.sql` | cria `metabase_app` e `airflow` |
 | `src/bi/publish_bi.py` | republica a modelagem no Postgres |
 | `src/bi/metabase_setup.py` | provisiona o painel pela API |
-| `src/bi/capturar_prints.py` | captura os prints do painel para evidências |
 | `src/bi/stack.py` | sobe/confere os containers; pula com aviso sem Docker |
 | `src/orchestration/run_dag.py` | dispara a DAG e gera a evidência |
 | `src/cloud/provision_and_upload.py` | provisiona o bucket e envia, no mesmo processo |
